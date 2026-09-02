@@ -1,6 +1,9 @@
+import { useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import Icon from './Icon'
 import { THEMES, useTheme } from '../theme/ThemeProvider'
+import { countIncidents } from '../api/incidents'
+import { useApi } from '../api/useApi'
 import { user } from '../data/mock'
 
 const GROUPS = [
@@ -9,7 +12,7 @@ const GROUPS = [
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
       { to: '/mapa', label: 'Mapa', icon: 'map' },
-      { to: '/incidentes', label: 'Incidentes', icon: 'incident', count: '23' },
+      { to: '/incidentes', label: 'Incidentes', icon: 'incident' },
       { to: '/camaras', label: 'Cámaras', icon: 'camera', count: '8/10' },
       { to: '/vehiculos', label: 'Vehículos', icon: 'vehicle' },
     ],
@@ -31,13 +34,19 @@ const GROUPS = [
 export default function Sidebar({ collapsed }) {
   const { theme, setTheme } = useTheme()
 
+  // Incidentes sin revisar: es el numero que decide si alguien entra a la pantalla.
+  const fetcher = useCallback(({ signal }) => countIncidents({ status: 'nuevo', signal }), [])
+  const { data: pending } = useApi(fetcher, [])
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       {GROUPS.map((group, gi) => (
         <div key={group.title} style={{ width: '100%', paddingTop: gi ? 16 : 0 }}>
           <div className="sect">{collapsed ? group.title.slice(0, 3) : group.title}</div>
           <nav className="nav">
-            {group.items.map((item) => (
+            {group.items.map((item) => {
+              const count = item.to === '/incidentes' ? (pending ?? undefined) : item.count
+              return (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -48,20 +57,21 @@ export default function Sidebar({ collapsed }) {
                 {!collapsed && (
                   <>
                     <span>{item.label}</span>
-                    {item.count && <span className="count">{item.count}</span>}
+                    {count && <span className="count">{count}</span>}
                   </>
                 )}
                 {collapsed && (
                   <>
-                    {item.count && <span className="count">{item.count}</span>}
+                    {count && <span className="count">{count}</span>}
                     <span className="tip">
                       {item.label}
-                      {item.count ? ` · ${item.count}` : ''}
+                      {count ? ` · ${count}` : ''}
                     </span>
                   </>
                 )}
               </NavLink>
-            ))}
+              )
+            })}
           </nav>
         </div>
       ))}

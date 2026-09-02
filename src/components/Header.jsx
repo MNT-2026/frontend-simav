@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ConnectionStatus from './ConnectionStatus'
 import Icon from './Icon'
 import { THEMES, useTheme } from '../theme/ThemeProvider'
 import { notifications, user } from '../data/mock'
@@ -65,6 +66,7 @@ export default function Header({ title, crumbs = [], collapsed, onToggleSidebar 
       </div>
 
       <div className="header-right" ref={ref}>
+        <ConnectionStatus />
         <div style={{ position: 'relative' }}>
           <button
             className="iconbtn"

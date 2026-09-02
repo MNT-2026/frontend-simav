@@ -65,3 +65,15 @@ los tres a la vez.
 - El sidebar se colapsa a 68 px desde el botón del header y muestra tooltips.
 - Interacciones reales: búsqueda, filtros, ordenación, paginación, selección múltiple,
   confirmación en modal, avisos de exportación con progreso y cambio de tema.
+
+## Conectar con la API
+
+```bash
+cp .env.example .env        # VITE_API_URL=http://localhost:8000/api/v1
+npm run dev
+```
+
+El backend (`Backend-SIMAV/backend-simav`) debe estar levantado y permitir el origen del
+frontend en `CORS_ORIGINS`. Toda la red pasa por `src/api/`; `src/data/mock.js` ya solo
+alimenta las pantallas que el backend todavía no cubre (cámaras, vehículos, estadísticas,
+reportes). Los detalles están en `CLAUDE.md`.

@@ -88,3 +88,36 @@ Token discipline that the design depends on:
 The numbers are fictional but deliberately consistent across screens (147 detections = 82 potholes
 + 65 cracks, 23 critical, 8/10 cameras online). If you change a figure in `mock.js`, update the
 places that restate it — KPIs, charts, and page copy — or the demo stops adding up.
+
+## Datos: la API real y lo que sigue en mock
+
+`src/api/` es la única puerta a la red. Nadie llama a `fetch` fuera de `api/client.js`.
+
+- `client.js` — wrapper de fetch, `ApiError` con `status`, `isNotFound`, `isUnavailable`.
+  La URL base sale de `VITE_API_URL` (ver `.env.example`); por defecto
+  `http://localhost:8000/api/v1`.
+- `mappers.js` — traduce enums del backend (inglés) a la interfaz (español) y de vuelta:
+  `POTHOLE`→`Bache`, `HIGH`→`alta`, `ACTIVE`→`nuevo`, `confidence` 0–1 → 0–100.
+  **Las pantallas nunca ven enums y la API nunca ve español.**
+- `projection.js` — `RoadMap` dibuja sobre un `viewBox` inventado, así que las
+  coordenadas se proyectan linealmente sobre `CITY_BOUNDS`. Las posiciones relativas son
+  correctas; no coinciden con las calles dibujadas.
+- `incidents.js` / `inspections.js` — un módulo por recurso, devuelven objetos ya mapeados.
+- `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
+  cambiar las dependencias.
+
+**Conectadas a la API**: Dashboard (KPIs, mapa, recientes), Mapa, Incidentes (filtros y
+paginación **en servidor**), Detalle de incidente (con cambio de estado real), y el
+contador del sidebar.
+
+**Todavía en `mock.js`**: Cámaras, Vehículos, Estadísticas, Reportes, Datos, las
+notificaciones, el usuario, y las series temporales de los sparklines. El backend no
+modela nada de eso. Donde un dato falso convive con datos reales, la interfaz lo dice
+(«dato de demostración»).
+
+**Huecos del backend que se notan en la interfaz** (candidatos a la próxima iteración):
+- No hay ordenación por columna ni búsqueda por texto, así que las cabeceras de la tabla
+  ya no ordenan y el buscador solo filtra la página cargada.
+- No existen dirección, ruta, cámara ni vehículo por incidente: esas columnas muestran «—».
+- No hay estado «en seguimiento» ni histórico de revisión: el seguimiento del detalle se
+  deriva del estado actual.

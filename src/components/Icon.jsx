@@ -191,6 +191,12 @@ const paths = {
     </>
   ),
   arrowRight: <path d="M4 12h15M13 6l6 6-6 6" />,
+  refresh: (
+    <>
+      <path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1" />
+      <path d="M20.5 4v5h-5" />
+    </>
+  ),
 }
 
 export default function Icon({ name, size = 18, strokeWidth = 1.7, ...rest }) {

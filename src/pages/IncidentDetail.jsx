@@ -1,41 +1,94 @@
+import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { MiniMap } from '../components/RoadMap'
-import { Button, Card, ErrorState, SeverityBadge, StatusBadge } from '../components/ui'
+import { Button, Card, ErrorState, SeverityBadge, Skeleton, StatusBadge } from '../components/ui'
 import { useFakeExport, useToasts } from '../components/Toasts'
-import { incidentTimeline, incidents } from '../data/mock'
+import { getIncident, updateIncidentStatus } from '../api/incidents'
+import { formatDateTime } from '../api/mappers'
+import { useApi } from '../api/useApi'
 
-const DEFAULT_TIMELINE = [
-  { key: 'detectado', label: 'Detectado', when: '—', who: 'IA ROADVISION', done: true },
-  { key: 'revisado', label: 'Revisado', when: 'Pendiente', who: '' },
-  { key: 'seguimiento', label: 'En seguimiento', when: 'Pendiente', who: '' },
-  { key: 'atendido', label: 'Atendido', when: 'Pendiente · SLA 48 h', who: '' },
-]
+/** El seguimiento se deriva del estado actual: el backend aún no guarda histórico. */
+function buildTimeline(incident) {
+  const order = ['nuevo', 'revisado', 'atendido']
+  const reached = incident.status === 'descartado' ? 1 : order.indexOf(incident.status)
+  const steps = [
+    { key: 'detectado', label: 'Detectado', when: formatDateTime(incident.detectedAt), who: 'IA ROADVISION' },
+    { key: 'revisado', label: 'Revisado', when: 'Pendiente', who: '' },
+    { key: 'atendido', label: 'Atendido', when: 'Pendiente', who: '' },
+  ]
+  if (incident.status === 'descartado') {
+    steps[1] = { key: 'descartado', label: 'Descartado', when: formatDateTime(incident.createdAt), who: '' }
+    steps[2] = { key: 'cerrado', label: 'Cerrado', when: 'Sin acción', who: '' }
+  }
+  return steps.map((step, i) => ({
+    ...step,
+    done: i < reached,
+    current: i === reached,
+  }))
+}
 
 export default function IncidentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const exportFile = useFakeExport()
   const { push } = useToasts()
+  const [saving, setSaving] = useState(false)
 
-  const incident = incidents.find((i) => i.id === id)
+  const fetcher = useCallback(({ signal }) => getIncident(id, { signal }), [id])
+  const { data: incident, loading, error, reload } = useApi(fetcher, [id])
 
-  if (!incident) {
+  const changeStatus = async (target, label) => {
+    setSaving(true)
+    try {
+      await updateIncidentStatus(id, target)
+      reload()
+      push({ tone: 'success', title: label })
+    } catch (err) {
+      push({
+        tone: 'high',
+        title: 'No se pudo cambiar el estado',
+        desc: err.message,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="content">
+        <Card style={{ flex: 1, padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Skeleton w="45%" h={22} />
+          {Array.from({ length: 10 }, (_, i) => (
+            <Skeleton key={i} h={14} />
+          ))}
+        </Card>
+      </main>
+    )
+  }
+
+  if (error) {
+    const notFound = error.isNotFound
     return (
       <main className="content">
         <Card style={{ flex: 1, display: 'flex' }}>
           <ErrorState
-            title="No encontramos ese incidente"
-            description={`El identificador ${id} no existe o fue eliminado del registro.`}
-            code="error 404 · svc-incidents"
-            onRetry={() => navigate('/incidentes')}
+            title={notFound ? 'No encontramos ese incidente' : 'No pudimos cargar el incidente'}
+            description={
+              notFound
+                ? `El identificador ${id} no existe o fue eliminado del registro.`
+                : error.message
+            }
+            code={error.detail}
+            onRetry={notFound ? () => navigate('/incidentes') : reload}
           />
         </Card>
       </main>
     )
   }
 
-  const steps = incidentTimeline[incident.id] ?? DEFAULT_TIMELINE
+  const steps = buildTimeline(incident)
 
   return (
     <main className="content">
@@ -46,28 +99,45 @@ export default function IncidentDetail() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {incident.type} en calzada · {incident.location}
+              {incident.type} en calzada
             </span>
             <SeverityBadge value={incident.severity} />
             <StatusBadge value={incident.status} />
           </div>
           <div className="mono sub-text" style={{ fontSize: 12, marginTop: 4 }}>
-            {incident.id} · detectado el {incident.date} · {incident.route}
+            {incident.shortId} · detectado el {incident.date}
           </div>
         </div>
         <span className="spacer" />
-        <Button icon="download" onClick={() => exportFile('la ficha en PDF', incident.id)}>
+        <Button icon="download" onClick={() => exportFile('la ficha en PDF', incident.shortId)}>
           Exportar ficha PDF
         </Button>
-        <Button onClick={() => push({ tone: 'success', title: 'Cuadrilla asignada', desc: 'Cuadrilla Norte 2 · SLA 48 h' })}>
-          Asignar cuadrilla
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => push({ tone: 'success', title: `${incident.id} marcado como atendido` })}
-        >
-          Marcar como atendido
-        </Button>
+        {incident.status === 'nuevo' && (
+          <>
+            <Button
+              loading={saving}
+              onClick={() => changeStatus('descartado', `${incident.shortId} descartado`)}
+            >
+              Descartar
+            </Button>
+            <Button
+              variant="primary"
+              loading={saving}
+              onClick={() => changeStatus('revisado', `${incident.shortId} marcado como revisado`)}
+            >
+              Marcar como revisado
+            </Button>
+          </>
+        )}
+        {incident.status === 'revisado' && (
+          <Button
+            variant="primary"
+            loading={saving}
+            onClick={() => changeStatus('atendido', `${incident.shortId} marcado como atendido`)}
+          >
+            Marcar como atendido
+          </Button>
+        )}
       </div>
 
       <div style={{ flex: 1, display: 'flex', gap: 14, minHeight: 0 }}>
@@ -76,11 +146,12 @@ export default function IncidentDetail() {
             <div className="card-head">
               <span className="card-title">Evidencia visual</span>
               <span className="sub-text">
-                Fotograma 1 de 3 · {incident.camera} · {incident.date}
+                {incident.evidenceUrl ? 'Fotograma de la detección' : 'Sin evidencia adjunta'} · {incident.date}
               </span>
               <span className="spacer" />
-              <Button size="sm">Ver original</Button>
-              <Button size="sm">Descargar</Button>
+              <Button size="sm" disabled={!incident.evidenceUrl}>
+                Ver original
+              </Button>
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#4E524B', minHeight: 0 }}>
               <svg
@@ -105,12 +176,6 @@ export default function IncidentDetail() {
                 <text x="268" y="232" fontFamily="IBM Plex Mono, monospace" fontSize="15" fontWeight="600" fill="#04091A">
                   {incident.type.toLowerCase()} · {incident.confidence}%
                 </text>
-                <g stroke="var(--acc-bright)" strokeWidth="2" opacity="0.55">
-                  <path d="M258 240h-40M530 386h40" />
-                </g>
-                <text x="556" y="392" fontFamily="IBM Plex Mono, monospace" fontSize="13" fill="var(--acc-bright)">
-                  ≈ 78 cm
-                </text>
               </svg>
               <div className="mono" style={{ position: 'absolute', right: 14, top: 14, background: 'rgba(6,10,18,.72)', color: '#fff', borderRadius: 7, padding: '5px 9px', fontSize: 11, fontWeight: 600 }}>
                 {incident.lat}, {incident.lon}
@@ -122,7 +187,7 @@ export default function IncidentDetail() {
             <div className="card-head">
               <span className="card-title">Seguimiento del incidente</span>
               <span className="spacer" />
-              <span className="sub-text">Tiempo transcurrido: 6 h 12 min</span>
+              <span className="sub-text">Estado actual: {incident.status}</span>
             </div>
             <div className="timeline">
               {steps.map((s, i) => (
@@ -157,9 +222,9 @@ export default function IncidentDetail() {
             <div className="card-head">
               <span className="card-title">Información del incidente</span>
             </div>
+            <Row k="Identificador" v={incident.id} mono />
             <Row k="Tipo" v={incident.type} />
-            <Row k="Severidad" v={<span style={{ color: 'var(--high-ink)' }}>Alta</span>} hide={incident.severity !== 'alta'} />
-            <Row k="Severidad" v={incident.severity} hide={incident.severity === 'alta'} />
+            <Row k="Severidad" v={<SeverityBadge value={incident.severity} />} />
             <Row
               k="Confianza IA"
               v={
@@ -171,13 +236,25 @@ export default function IncidentDetail() {
                 </span>
               }
             />
-            <Row k="Fecha y hora" v={incident.date} mono />
-            <Row k="Cámara" v={incident.camera} mono />
-            <Row k="Vehículo" v={incident.vehicle} mono />
-            <Row k="Ruta" v={incident.route} />
+            <Row k="Detectado" v={incident.date} mono />
             <Row k="Latitud" v={incident.lat.toFixed(6)} mono />
             <Row k="Longitud" v={incident.lon.toFixed(6)} mono />
-            <Row k="Dirección" v={incident.location} last />
+            <Row
+              k="Recorrido"
+              v={
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate(`/incidentes?recorrido=${incident.inspectionId}`)
+                  }}
+                  className="mono"
+                >
+                  {incident.inspectionId.slice(0, 8).toUpperCase()}
+                </a>
+              }
+              last
+            />
           </Card>
 
           <Card style={{ flex: 1, minHeight: 200, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -200,7 +277,7 @@ export default function IncidentDetail() {
                 Copiar coordenadas
               </Button>
               <Button style={{ flex: 1 }} onClick={() => navigate('/mapa')}>
-                Ver ruta completa
+                Ver en el mapa
               </Button>
             </div>
           </Card>
@@ -210,8 +287,7 @@ export default function IncidentDetail() {
   )
 }
 
-function Row({ k, v, mono, last, hide }) {
-  if (hide) return null
+function Row({ k, v, mono, last }) {
   return (
     <div className="kv" style={last ? { borderBottom: 'none' } : undefined}>
       <span className="k">{k}</span>

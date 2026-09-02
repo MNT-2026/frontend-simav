@@ -1,5 +1,3 @@
-import { mapClusters, mapMarkers } from '../data/mock'
-
 const SEV_COLOR = { alta: 'var(--high)', media: 'var(--med)', baja: 'var(--low)' }
 const SEV_RADIUS = { alta: 9, media: 8, baja: 7 }
 
@@ -9,8 +7,8 @@ const SEV_RADIUS = { alta: 9, media: 8, baja: 7 }
  * — salvo los marcadores de severidad, que son idénticos en Light, Dark y Night.
  */
 export default function RoadMap({
-  markers = mapMarkers,
-  clusters = mapClusters,
+  markers = [],
+  clusters = [],
   selected,
   onSelect,
   showRoute = true,

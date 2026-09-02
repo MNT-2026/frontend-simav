@@ -155,6 +155,7 @@ export const STATUS_LABEL = {
   revisado: 'Revisado',
   seguimiento: 'En seguimiento',
   atendido: 'Atendido',
+  descartado: 'Descartado',
   activa: 'Activa',
   advertencia: 'Advertencia',
   offline: 'Offline',

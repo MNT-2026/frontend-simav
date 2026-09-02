@@ -1,72 +1,93 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import RoadMap from '../components/RoadMap'
 import { Sparkline, SparkBars } from '../components/charts'
-import { Button, Card, Delta, SeverityBadge, Skeleton } from '../components/ui'
+import { Button, Card, ErrorState, SeverityBadge, Skeleton } from '../components/ui'
 import { useFakeExport } from '../components/Toasts'
-import { criticalTrend, incidents, kpis, severityBreakdown, vehicles, weeklyTrend } from '../data/mock'
+import { countIncidents, listIncidents } from '../api/incidents'
+import { CITY_BOUNDS, toBoundsParams, toCanvas } from '../api/projection'
+import { useApi } from '../api/useApi'
+import { criticalTrend, vehicles, weeklyTrend } from '../data/mock'
 
-const PERIODS = ['Hoy', '7 días', '30 días', 'Personalizado']
+const SEVERITY_COLOR = { alta: 'var(--high)', media: 'var(--med)', baja: 'var(--low)' }
+const SEVERITY_LABEL = { alta: 'Alta', media: 'Media', baja: 'Baja' }
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const exportFile = useFakeExport()
-  const [period, setPeriod] = useState('7 días')
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    setLoading(true)
-    const t = setTimeout(() => setLoading(false), 550)
-    return () => clearTimeout(t)
-  }, [period])
+  const fetcher = useCallback(async ({ signal }) => {
+    const [total, potholes, cracks, high, medium, low, recent, onMap] = await Promise.all([
+      countIncidents({ signal }),
+      countIncidents({ type: 'Bache', signal }),
+      countIncidents({ type: 'Grieta', signal }),
+      countIncidents({ severity: 'alta', signal }),
+      countIncidents({ severity: 'media', signal }),
+      countIncidents({ severity: 'baja', signal }),
+      listIncidents({ limit: 5, signal }),
+      listIncidents({ bounds: toBoundsParams(CITY_BOUNDS), limit: 100, signal }),
+    ])
+    return {
+      total,
+      potholes,
+      cracks,
+      severities: { alta: high, media: medium, baja: low },
+      recent: recent.items,
+      markers: onMap.items.map((i) => ({
+        id: i.id,
+        severity: i.severity,
+        ...toCanvas({ lat: i.lat, lon: i.lon }),
+      })),
+    }
+  }, [])
+  const { data, loading, error, reload } = useApi(fetcher, [])
 
-  const recent = incidents.slice(0, 5)
+  if (error) {
+    return (
+      <main className="content">
+        <Card style={{ flex: 1, display: 'flex' }}>
+          <ErrorState
+            title="No pudimos cargar el panel"
+            description={error.message}
+            code={error.detail}
+            onRetry={reload}
+          />
+        </Card>
+      </main>
+    )
+  }
+
   const trend = weeklyTrend.map((w) => w.value)
 
   return (
     <main className="content">
       <div className="row-between">
-        <div className="chips" role="tablist" aria-label="Periodo">
-          {PERIODS.map((p) => (
-            <button key={p} role="tab" aria-selected={p === period} className={p === period ? 'on' : ''} onClick={() => setPeriod(p)}>
-              {p}
-            </button>
-          ))}
-        </div>
         <div className="sub-text" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--low)', display: 'block' }} />
-          Datos actualizados hace 2 min · Ruta troncal Norte–Centro
+          Datos en vivo desde la API
         </div>
         <span className="spacer" />
-        <Button icon="filter">Filtros</Button>
-        <Button variant="primary" icon="download" onClick={() => exportFile('la exportación en Excel', '147 incidentes · 12 columnas')}>
+        <Button icon="refresh" onClick={reload}>
+          Actualizar
+        </Button>
+        <Button
+          variant="primary"
+          icon="download"
+          onClick={() => exportFile('la exportación en Excel', `${data?.total ?? 0} incidentes`)}
+        >
           Exportar Excel
         </Button>
       </div>
 
-      {loading ? <KpiSkeleton /> : <KpiRow trend={trend} />}
+      {loading ? <KpiSkeleton /> : <KpiRow data={data} trend={trend} />}
 
       <div className="dashboard-main" style={{ flex: 1, display: 'flex', gap: 14, minHeight: 420 }}>
-        <RoadMap style={{ flex: 1, minWidth: 0 }} onSelect={(id) => navigate(`/incidentes/${id}`)}>
-          <div className="map-overlay" style={{ top: 12, left: 12 }}>
-            <div className="gchip" style={{ width: 230, color: 'var(--sub)', fontWeight: 600 }}>
-              <Icon name="search" size={14} strokeWidth={1.9} />
-              Buscar ubicación o ruta…
-            </div>
-            <span className="gchip">
-              <i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--high)' }} />
-              Alta
-            </span>
-            <span className="gchip">
-              <i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--med)' }} />
-              Media
-            </span>
-            <span className="gchip off">
-              <i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--low)' }} />
-              Baja
-            </span>
-          </div>
+        <RoadMap
+          style={{ flex: 1, minWidth: 0 }}
+          markers={data?.markers ?? []}
+          onSelect={(id) => navigate(`/incidentes/${id}`)}
+        >
           <div className="map-overlay" style={{ top: 12, right: 12 }}>
             <Link to="/mapa" className="gchip">
               <Icon name="map" size={14} strokeWidth={1.9} />
@@ -77,16 +98,12 @@ export default function Dashboard() {
             <div className="sect" style={{ padding: 0 }}>
               Severidad
             </div>
-            {severityBreakdown.map((s) => (
-              <div key={s.id} className="legend-row">
-                <i style={{ background: s.color }} />
-                {s.label.split(' · ')[0]} · {s.count}
+            {Object.entries(SEVERITY_LABEL).map(([id, label]) => (
+              <div key={id} className="legend-row">
+                <i style={{ background: SEVERITY_COLOR[id] }} />
+                {label} · {data?.severities[id] ?? 0}
               </div>
             ))}
-          </div>
-          <div className="zoom">
-            <button aria-label="Acercar">+</button>
-            <button aria-label="Alejar">−</button>
           </div>
         </RoadMap>
 
@@ -95,49 +112,58 @@ export default function Dashboard() {
             <div className="card-head">
               <span className="card-title">Incidentes recientes</span>
               <span className="spacer" />
-              <span className="badge high">
-                <i />
-                {kpis.criticalUnreviewed} nuevos
-              </span>
+              {data && (
+                <span className="badge high">
+                  <i />
+                  {data.severities.alta} críticos
+                </span>
+              )}
             </div>
             <div style={{ flex: 1, overflow: 'auto' }}>
-              {recent.map((it) => (
-                <button
-                  key={it.id}
-                  onClick={() => navigate(`/incidentes/${it.id}`)}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    border: 0,
-                    borderBottom: '1px solid var(--line-2)',
-                    background: 'transparent',
-                    padding: '10px 14px',
-                    display: 'flex',
-                    gap: 10,
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Thumb type={it.type} />
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className="mono sub-text" style={{ fontSize: 11 }}>
-                        {it.id}
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => (
+                    <div key={i} style={{ padding: '12px 14px', borderBottom: '1px solid var(--line-2)' }}>
+                      <Skeleton w="60%" />
+                      <Skeleton w="85%" style={{ marginTop: 8 }} />
+                    </div>
+                  ))
+                : data.recent.map((it) => (
+                    <button
+                      key={it.id}
+                      onClick={() => navigate(`/incidentes/${it.id}`)}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        border: 0,
+                        borderBottom: '1px solid var(--line-2)',
+                        background: 'transparent',
+                        padding: '10px 14px',
+                        display: 'flex',
+                        gap: 10,
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Thumb type={it.type} />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span className="mono sub-text" style={{ fontSize: 11 }}>
+                            {it.shortId}
+                          </span>
+                          <SeverityBadge value={it.severity} />
+                        </span>
+                        <span style={{ display: 'block', fontWeight: 700, fontSize: 12.5, marginTop: 2 }}>
+                          {it.type}
+                        </span>
+                        <span className="sub-text" style={{ display: 'block', fontSize: 10.5 }}>
+                          {it.date} · IA {it.confidence}%
+                        </span>
                       </span>
-                      <SeverityBadge value={it.severity} />
-                    </span>
-                    <span style={{ display: 'block', fontWeight: 700, fontSize: 12.5, marginTop: 2 }}>
-                      {it.type} · {it.location}
-                    </span>
-                    <span className="sub-text" style={{ display: 'block', fontSize: 10.5 }}>
-                      {it.camera} · {it.vehicle} · {it.date} · IA {it.confidence}%
-                    </span>
-                  </span>
-                </button>
-              ))}
+                    </button>
+                  ))}
             </div>
             <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)' }}>
-              <Link to="/incidentes">Ver los {kpis.total} incidentes →</Link>
+              <Link to="/incidentes">Ver los {data?.total ?? 0} incidentes →</Link>
             </div>
           </Card>
 
@@ -145,8 +171,8 @@ export default function Dashboard() {
             <div className="card-head">
               <span className="card-title">Flota en ruta</span>
               <span className="spacer" />
-              <span className="mono sub-text">
-                {vehicles.filter((v) => v.status === 'transmitiendo').length} / {vehicles.length} activos
+              <span className="sub-text" style={{ fontSize: 10.5 }}>
+                datos de demostración
               </span>
             </div>
             {vehicles.slice(0, 3).map((v) => (
@@ -194,30 +220,38 @@ export default function Dashboard() {
   )
 }
 
-function KpiRow({ trend }) {
+function KpiRow({ data, trend }) {
+  const share = (n) => (data.total ? `${Math.round((n / data.total) * 100)}% del total` : 'Sin datos')
   return (
     <div className="kpis">
-      <Kpi icon="incident" label="Incidentes totales" value="147" delta={12.4} invert note="vs. periodo anterior">
+      <Kpi icon="incident" label="Incidentes totales" value={String(data.total)}>
         <Sparkline points={trend} color="var(--s1)" />
       </Kpi>
-      <Kpi icon="pothole" label="Baches" value="82" delta={8.1} invert note="56% del total">
+      <Kpi icon="pothole" label="Baches" value={String(data.potholes)} note={share(data.potholes)}>
         <SparkBars points={[16, 13, 19, 15, 22, 18, 25, 21, 28]} color="var(--s1)" />
       </Kpi>
-      <Kpi icon="crack" label="Grietas" value="65" delta={-3.2} invert note="44% del total">
+      <Kpi icon="crack" label="Grietas" value={String(data.cracks)} note={share(data.cracks)}>
         <SparkBars points={[24, 20, 22, 17, 19, 14, 16, 12, 13]} color="var(--s2)" />
       </Kpi>
-      <Kpi critical icon="incident" label="Críticos · requieren acción" value="23" valueColor="var(--high-ink)" badge>
+      <Kpi
+        critical
+        icon="incident"
+        label="Críticos · requieren acción"
+        value={String(data.severities.alta)}
+        valueColor="var(--high-ink)"
+        note={share(data.severities.alta)}
+      >
         <Sparkline points={criticalTrend} color="var(--high)" />
       </Kpi>
-      <Kpi icon="km" label="Kilómetros analizados" value="35.7" unit="km" delta={5.6} note="4.1 inc./km">
+      <Kpi icon="km" label="Kilómetros analizados" value="35.7" unit="km" note="dato de demostración">
         <Sparkline points={[28, 25, 26, 21, 23, 17, 15, 12, 10].reverse()} color="var(--acc)" fill={false} />
       </Kpi>
-      <Kpi icon="camera" label="Cámaras activas" value="8" unit="/ 10" cameras />
+      <Kpi icon="camera" label="Cámaras activas" value="8" unit="/ 10" note="dato de demostración" />
     </div>
   )
 }
 
-function Kpi({ icon, label, value, unit, delta, invert, note, valueColor, critical, badge, cameras, children }) {
+function Kpi({ icon, label, value, unit, note, valueColor, critical, children }) {
   return (
     <div className={`kpi ${critical ? 'critical' : ''}`}>
       <div className="kpi-top" style={critical ? { color: 'var(--high-ink)' } : undefined}>
@@ -227,45 +261,8 @@ function Kpi({ icon, label, value, unit, delta, invert, note, valueColor, critic
       <div className="kpi-value mono" style={valueColor ? { color: valueColor } : undefined}>
         {value} {unit && <small>{unit}</small>}
       </div>
-      <div className="kpi-delta">
-        {delta != null && <Delta value={delta} invert={invert} />}
-        {badge && (
-          <>
-            <span className="badge high">
-              <i />
-              Severidad alta
-            </span>
-            <span className="sub-text">9 sin revisar</span>
-          </>
-        )}
-        {cameras && (
-          <>
-            <span className="badge med">
-              <i />1 advertencia
-            </span>
-            <span className="badge high">
-              <i />1 offline
-            </span>
-          </>
-        )}
-        {note && <span className="sub-text">{note}</span>}
-      </div>
+      <div className="kpi-delta">{note && <span className="sub-text">{note}</span>}</div>
       {children && <div className="kpi-spark">{children}</div>}
-      {cameras && (
-        <div style={{ position: 'absolute', left: 14, right: 14, bottom: 16, display: 'flex', gap: 3 }}>
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span
-              key={i}
-              style={{
-                flex: 1,
-                height: 6,
-                borderRadius: 3,
-                background: i < 8 ? 'var(--low)' : i === 8 ? 'var(--med)' : 'var(--line)',
-              }}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import Header from './Header'
 import Sidebar from './Sidebar'
+import { shortId } from '../api/mappers'
 
 const META = {
   '/dashboard': { title: 'Dashboard operativo', crumbs: [{ label: 'Dashboard' }] },
@@ -22,12 +23,11 @@ export default function AppLayout() {
 
   let meta = META[pathname]
   if (!meta && pathname.startsWith('/incidentes/')) {
+    // El id es un UUID: en la cabecera solo cabe (y se lee) su prefijo.
+    const label = shortId(id ?? pathname.split('/').pop())
     meta = {
-      title: `Incidente #${id ?? pathname.split('/').pop()}`,
-      crumbs: [
-        { label: 'Incidentes', to: '/incidentes' },
-        { label: id ?? pathname.split('/').pop() },
-      ],
+      title: `Incidente ${label}`,
+      crumbs: [{ label: 'Incidentes', to: '/incidentes' }, { label }],
     }
   }
 

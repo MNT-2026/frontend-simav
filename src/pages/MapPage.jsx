@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import RoadMap, { EvidenceFrame } from '../components/RoadMap'
-import { Button, SeverityBadge, StatusBadge } from '../components/ui'
-import { incidents, mapMarkers, severityBreakdown } from '../data/mock'
+import { Button, ErrorState, SeverityBadge, StatusBadge } from '../components/ui'
+import { useToasts } from '../components/Toasts'
+import { listIncidents, updateIncidentStatus } from '../api/incidents'
+import { CITY_BOUNDS, toBoundsParams, toCanvas } from '../api/projection'
+import { useApi } from '../api/useApi'
 
 const FILTERS = [
   { id: 'alta', label: 'Alta', color: 'var(--high)' },
@@ -11,16 +14,71 @@ const FILTERS = [
   { id: 'baja', label: 'Baja', color: 'var(--low)' },
 ]
 
+/** El lienzo del mapa no hace zoom todavía, así que pedimos todo el área de cobertura. */
+const MAP_PAGE_SIZE = 100
+
 export default function MapPage() {
   const navigate = useNavigate()
+  const { push } = useToasts()
   const [active, setActive] = useState(['alta', 'media', 'baja'])
-  const [selected, setSelected] = useState('IGB-00231')
+  const [selected, setSelected] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const markers = mapMarkers.filter((m) => active.includes(m.severity))
-  const incident = incidents.find((i) => i.id === selected)
+  // Una sola consulta por área; el filtro de severidad se aplica sobre lo ya traído
+  // para que apagar una chincheta no dispare otra petición.
+  const fetcher = useCallback(
+    ({ signal }) =>
+      listIncidents({ bounds: toBoundsParams(CITY_BOUNDS), limit: MAP_PAGE_SIZE, signal }),
+    []
+  )
+  const { data, loading, error, reload } = useApi(fetcher, [])
+
+  const incidents = useMemo(() => data?.items ?? [], [data])
+
+  const counts = useMemo(() => {
+    const table = { alta: 0, media: 0, baja: 0 }
+    for (const i of incidents) table[i.severity] = (table[i.severity] ?? 0) + 1
+    return table
+  }, [incidents])
+
+  const markers = useMemo(
+    () =>
+      incidents
+        .filter((i) => active.includes(i.severity))
+        .map((i) => ({ id: i.id, severity: i.severity, ...toCanvas({ lat: i.lat, lon: i.lon }) })),
+    [incidents, active]
+  )
+
+  const incident = incidents.find((i) => i.id === selected) ?? null
 
   const toggle = (id) =>
     setActive((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]))
+
+  const markAsReviewed = async () => {
+    setSaving(true)
+    try {
+      await updateIncidentStatus(incident.id, 'revisado')
+      reload()
+      push({ tone: 'success', title: `${incident.shortId} marcado como revisado` })
+    } catch (err) {
+      push({ tone: 'high', title: 'No se pudo cambiar el estado', desc: err.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (error) {
+    return (
+      <main className="content">
+        <ErrorState
+          title="No pudimos cargar el mapa"
+          description={error.message}
+          code={error.detail}
+          onRetry={reload}
+        />
+      </main>
+    )
+  }
 
   return (
     <main style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex' }}>
@@ -28,25 +86,21 @@ export default function MapPage() {
         className="flush"
         style={{ flex: 1 }}
         markers={markers}
+        clusters={[]}
         selected={selected}
         onSelect={setSelected}
       >
         <div className="map-overlay" style={{ top: 14, left: 14 }}>
-          <div className="gchip" style={{ width: 250, color: 'var(--sub)', fontWeight: 600 }}>
-            <Icon name="search" size={14} strokeWidth={1.9} />
-            Buscar ubicación o ruta…
-          </div>
           <span className="gchip on">
             <Icon name="filter" size={14} strokeWidth={1.8} />
             {active.length} de 3 severidades
           </span>
           {FILTERS.map((f) => {
-            const count = severityBreakdown.find((s) => s.id === f.id)?.count
             const on = active.includes(f.id)
             return (
               <button key={f.id} className={`gchip ${on ? '' : 'off'}`} onClick={() => toggle(f.id)} aria-pressed={on}>
                 <i style={{ width: 8, height: 8, borderRadius: '50%', background: f.color, display: 'block' }} />
-                {f.label} · {count}
+                {f.label} · {counts[f.id] ?? 0}
               </button>
             )
           })}
@@ -68,18 +122,17 @@ export default function MapPage() {
             boxShadow: 'var(--shadow)',
           }}
         >
-          <Stat label="RUTA VISIBLE" value="Troncal Norte–Centro" />
-          <Stat label="TRAMO" value="35.7 km" mono />
-          <Stat label="INCIDENTES" value={String(markers.length * 14 + 7)} mono />
+          <Stat label="ÁREA VISIBLE" value="Cobertura completa" />
+          <Stat
+            label="LATITUD"
+            value={`${CITY_BOUNDS.minLatitude} – ${CITY_BOUNDS.maxLatitude}`}
+            mono
+          />
+          <Stat label="INCIDENTES" value={loading ? '…' : String(markers.length)} mono />
           <span style={{ width: 1, height: 34, background: 'var(--line)' }} />
           <span className="mono sub-text" style={{ fontSize: 11 }}>
-            Escala 1:12 000 · 200 m
+            Posiciones proyectadas · sin cartografía real
           </span>
-        </div>
-
-        <div className="zoom" style={{ right: incident ? 406 : 14 }}>
-          <button aria-label="Acercar">+</button>
-          <button aria-label="Alejar">−</button>
         </div>
       </RoadMap>
 
@@ -88,10 +141,10 @@ export default function MapPage() {
           <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <div className="mono sub-text" style={{ fontSize: 11 }}>
-                {incident.id}
+                {incident.shortId}
               </div>
               <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 3 }}>
-                {incident.type} · {incident.severity === 'alta' ? 'profundo' : 'detectado'}
+                {incident.type}
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 <SeverityBadge value={incident.severity} />
@@ -106,21 +159,6 @@ export default function MapPage() {
           <div style={{ padding: '14px 16px' }}>
             <div style={{ borderRadius: 11, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
               <EvidenceFrame confidence={incident.confidence} label={incident.type.toLowerCase()} />
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 8,
-                  bottom: 8,
-                  background: 'rgba(6,10,18,.78)',
-                  color: '#fff',
-                  borderRadius: 6,
-                  padding: '3px 7px',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                }}
-              >
-                Evidencia 1 / 3
-              </div>
             </div>
 
             <div
@@ -151,11 +189,8 @@ export default function MapPage() {
 
           <div style={{ borderTop: '1px solid var(--line)' }}>
             <Row k="Tipo" v={incident.type} />
-            <Row k="Fecha y hora" v={incident.date} mono />
-            <Row k="Cámara" v={incident.camera} mono />
-            <Row k="Vehículo" v={incident.vehicle} mono />
-            <Row k="Ruta" v={incident.route} />
-            <Row k="Ubicación" v={incident.location} />
+            <Row k="Detectado" v={incident.date} mono />
+            <Row k="Recorrido" v={incident.inspectionId.slice(0, 8).toUpperCase()} mono />
             <Row k="Coordenadas" v={`${incident.lat}, ${incident.lon}`} mono last />
           </div>
 
@@ -163,7 +198,11 @@ export default function MapPage() {
             <Button variant="primary" style={{ flex: 1 }} onClick={() => navigate(`/incidentes/${incident.id}`)}>
               Ver detalle completo
             </Button>
-            <Button>Marcar revisado</Button>
+            {incident.status === 'nuevo' && (
+              <Button loading={saving} onClick={markAsReviewed}>
+                Marcar revisado
+              </Button>
+            )}
           </div>
         </aside>
       )}

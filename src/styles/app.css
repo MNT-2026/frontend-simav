@@ -708,6 +708,11 @@ button {
   background: var(--low-soft);
   color: var(--low-ink);
 }
+.status.descartado {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--sub);
+}
 .status.activa,
 .status.transmitiendo {
   border-color: var(--low-soft);
