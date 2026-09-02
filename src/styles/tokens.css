@@ -1,0 +1,179 @@
+/* ============================================================
+   ROADVISION · design tokens
+   Identidad: grafito azulado + un único azul tecnológico.
+   Rojo / ámbar / verde azulado están RESERVADOS para severidad.
+   ============================================================ */
+
+:root,
+[data-theme='light'] {
+  /* superficies */
+  --bg: #f1f4f9;
+  --surf: #ffffff;
+  --surf-2: #f7f9fc;
+  --line: #e2e7f0;
+  --line-2: #edf1f7;
+
+  /* tinta */
+  --ink: #0d1420;
+  --mut: #5a6678;
+  --sub: #8c97a8;
+
+  /* marca */
+  --acc: #2563eb;
+  --acc-deep: #1d4ed8;
+  --acc-bright: #4c8dff;
+  --acc-ink: #ffffff;
+  --acc-soft: rgba(37, 99, 235, 0.1);
+  --acc-line: rgba(37, 99, 235, 0.35);
+
+  /* estado (severidad) */
+  --high: #dc3d34;
+  --high-ink: #b0322a;
+  --high-soft: rgba(220, 61, 52, 0.1);
+  --med: #d9862a;
+  --med-ink: #a6641b;
+  --med-soft: rgba(217, 134, 42, 0.12);
+  --low: #0e9f8a;
+  --low-ink: #0b7e6d;
+  --low-soft: rgba(14, 159, 138, 0.11);
+  --info: #2563eb;
+  --info-ink: #1d4ed8;
+  --info-soft: rgba(37, 99, 235, 0.08);
+
+  /* series de datos (validadas para daltonismo) */
+  --s1: #2f6bff;
+  --s2: #7c9c18;
+
+  /* mapa */
+  --map-bg: #e6ebf3;
+  --map-park: #dce7de;
+  --map-water: #d2e1f1;
+  --map-road: #ffffff;
+  --map-road-2: #eff3fa;
+  --map-label: #8792a3;
+  --map-route: #2563eb;
+  --map-halo: 0.14;
+
+  /* forma */
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 12px;
+  --r-xl: 14px;
+  --shadow: 0 1px 2px rgba(13, 20, 32, 0.04), 0 8px 24px -12px rgba(13, 20, 32, 0.12);
+  --shadow-lg: 0 24px 60px -24px rgba(13, 20, 32, 0.4);
+  --focus: 0 0 0 3px rgba(37, 99, 235, 0.38);
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+[data-theme='dark'] {
+  --bg: #0b0f16;
+  --surf: #121824;
+  --surf-2: #161d2b;
+  --line: #212b3b;
+  --line-2: #1a2331;
+
+  --ink: #e7ecf4;
+  --mut: #93a0b4;
+  --sub: #6c7a8e;
+
+  --acc: #4c8dff;
+  --acc-deep: #2f6bff;
+  --acc-bright: #6ea2ff;
+  --acc-ink: #061024;
+  --acc-soft: rgba(76, 141, 255, 0.16);
+  --acc-line: rgba(76, 141, 255, 0.45);
+
+  --high: #f2665a;
+  --high-ink: #f2665a;
+  --high-soft: rgba(242, 102, 90, 0.14);
+  --med: #efa648;
+  --med-ink: #efa648;
+  --med-soft: rgba(239, 166, 72, 0.14);
+  --low: #2cc0a8;
+  --low-ink: #2cc0a8;
+  --low-soft: rgba(44, 192, 168, 0.14);
+  --info: #4c8dff;
+  --info-ink: #4c8dff;
+  --info-soft: rgba(76, 141, 255, 0.14);
+
+  --s1: #5b8def;
+  --s2: #7fa226;
+
+  --map-bg: #0e1420;
+  --map-park: #12211a;
+  --map-water: #0e2233;
+  --map-road: #2c3a4e;
+  --map-road-2: #1a2332;
+  --map-label: #6c7a8e;
+  --map-route: #4c8dff;
+  --map-halo: 0.16;
+
+  --shadow: 0 8px 30px -14px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+  --focus: 0 0 0 3px rgba(76, 141, 255, 0.45);
+}
+
+[data-theme='night'] {
+  --bg: #03060d;
+  --surf: #070c15;
+  --surf-2: #0b111c;
+  --line: #141e2d;
+  --line-2: #101827;
+
+  --ink: #dae5f2;
+  --mut: #8090a4;
+  --sub: #5f6e80;
+
+  --acc: #4c8dff;
+  --acc-deep: #2f6bff;
+  --acc-bright: #7fb0ff;
+  --acc-ink: #030916;
+  --acc-soft: rgba(76, 141, 255, 0.18);
+  --acc-line: rgba(76, 141, 255, 0.5);
+
+  --high: #f2665a;
+  --high-ink: #f2665a;
+  --high-soft: rgba(242, 102, 90, 0.16);
+  --med: #efa648;
+  --med-ink: #efa648;
+  --med-soft: rgba(239, 166, 72, 0.16);
+  --low: #2cc0a8;
+  --low-ink: #2cc0a8;
+  --low-soft: rgba(44, 192, 168, 0.16);
+  --info: #4c8dff;
+  --info-ink: #4c8dff;
+  --info-soft: rgba(76, 141, 255, 0.16);
+
+  --s1: #5b8def;
+  --s2: #7fa226;
+
+  --map-bg: #03060d;
+  --map-park: #061410;
+  --map-water: #04141f;
+  --map-road: #18293d;
+  --map-road-2: #0e1826;
+  --map-label: #5f6e80;
+  --map-route: #4c8dff;
+  --map-halo: 0.2;
+
+  --shadow: 0 8px 30px -14px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.95);
+  --focus: 0 0 0 3px rgba(76, 141, 255, 0.5);
+}
+
+/* El usuario puede pedir menos movimiento desde Configuración */
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
