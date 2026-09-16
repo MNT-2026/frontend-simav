@@ -936,6 +936,10 @@ button {
 .sev-baja {
   fill: var(--low);
 }
+.sev-marker.hotspot {
+  fill-opacity: 0.55;
+  stroke-width: 2;
+}
 .bus-marker {
   fill: var(--acc);
   fill-opacity: 1;

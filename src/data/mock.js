@@ -16,12 +16,6 @@ export const kpis = {
   camerasTotal: 10,
 }
 
-export const severityBreakdown = [
-  { id: 'alta', label: 'Alta · requiere acción', count: 23, pct: 15.6, sla: 'SLA 48 h · 9 sin revisar', color: 'var(--high)' },
-  { id: 'media', label: 'Media · programar', count: 59, pct: 40.2, sla: 'SLA 15 días', color: 'var(--med)' },
-  { id: 'baja', label: 'Baja · monitorear', count: 65, pct: 44.2, sla: 'Sin SLA', color: 'var(--low)' },
-]
-
 export const weeklyTrend = [
   { label: 'S26', value: 18 },
   { label: 'S27', value: 21 },
@@ -35,23 +29,6 @@ export const weeklyTrend = [
 ]
 
 export const criticalTrend = [4, 5, 7, 6, 9, 8, 11, 13, 16]
-
-export const typeByMonth = [
-  { label: 'Abr', potholes: 10, cracks: 8 },
-  { label: 'May', potholes: 12, cracks: 9 },
-  { label: 'Jun', potholes: 14, cracks: 7 },
-  { label: 'Jul', potholes: 16, cracks: 9 },
-  { label: 'Ago', potholes: 19, cracks: 9 },
-  { label: 'Sep', potholes: 21, cracks: 10 },
-]
-
-export const hotspots = [
-  { zone: 'Av. Troncal km 3–6', count: 38, level: 'alta' },
-  { zone: 'Centro histórico', count: 27, level: 'media' },
-  { zone: 'Circular Norte', count: 21, level: 'media' },
-  { zone: 'Zona industrial', count: 13, level: 'baja' },
-  { zone: 'Ruta Sur km 8–11', count: 9, level: 'baja' },
-]
 
 /** Marcadores del mapa en coordenadas del viewBox 0 0 1200 840. */
 export const mapMarkers = [

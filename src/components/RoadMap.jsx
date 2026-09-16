@@ -193,6 +193,53 @@ export function VehicleMap({ vehicles = [], selected, onSelect, className = '', 
   )
 }
 
+/** Encuadra todas las zonas; sin zonas, deja la ciudad completa. */
+function FitPoints({ points, signature }) {
+  const map = useMap()
+  useEffect(() => {
+    if (points.length === 1) map.setView(points[0], 15)
+    else if (points.length > 1) map.fitBounds(points, { padding: [28, 28], maxZoom: 15 })
+    // La firma evita reencuadrar en cada render con el mismo contenido.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, signature])
+  return null
+}
+
+/**
+ * Zonas calientes sobre el mapa real: un círculo por zona, con área proporcional al
+ * número de anomalías y el color de su severidad dominante.
+ * `hotspots` son `{ id, lat, lon, count, level, label? }`.
+ */
+export function HotspotMap({ hotspots = [], className = '', style, children }) {
+  const max = Math.max(1, ...hotspots.map((h) => h.count))
+  const points = hotspots.map((h) => [h.lat, h.lon])
+  return (
+    <div className={`mapwrap ${className}`} style={style}>
+      <MapCanvas center={CITY.center} zoom={CITY.zoom} zoomControl={false} minZoom={11}>
+        <Tiles />
+        <ZoomControl position="topright" />
+        <SizeWatcher />
+        <FitPoints points={points} signature={hotspots.map((h) => h.id).join('|')} />
+        {hotspots.map((h) => (
+          <CircleMarker
+            key={h.id}
+            center={[h.lat, h.lon]}
+            // sqrt: el área, no el radio, es lo que el ojo compara.
+            radius={7 + 17 * Math.sqrt(h.count / max)}
+            pathOptions={{ className: `sev-marker hotspot sev-${h.level}` }}
+          >
+            <Tooltip direction="top" offset={[0, -6]}>
+              {h.label ? `${h.label} · ` : ''}
+              {h.count} {h.count === 1 ? 'incidente' : 'incidentes'}
+            </Tooltip>
+          </CircleMarker>
+        ))}
+      </MapCanvas>
+      {children}
+    </div>
+  )
+}
+
 /** Fotograma de evidencia simulado con la caja de detección de la IA. */
 export function EvidenceFrame({ confidence = 94, label = 'bache', height = 200 }) {
   return (

@@ -78,7 +78,7 @@ Token discipline that the design depends on:
 - `components/ui.jsx` — Button, Card/CardHead, SeverityBadge, StatusBadge, Confidence, Checkbox,
   Switch, Skeleton, EmptyState, ErrorState, Modal, Pager, Delta. Reuse these rather than restyling.
 - `components/charts.jsx` — hand-rolled SVG charts (Sparkline, SparkBars, TrendChart, GroupedBars,
-  RankBars, SeverityBar, GeoDensity, Legend). No charting library; keep it that way.
+  RankBars, SeverityBar, Legend). No charting library; keep it that way.
 - `components/RoadMap.jsx` — real interactive map of Ibagué with **Leaflet + react-leaflet** over
   free OpenStreetMap tiles (no API key). **The map is always light**, whatever the app theme:
   the canvas carries `data-theme="light"` so markers, tooltips and controls use light tokens. Markers are
@@ -98,7 +98,8 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 
 ## Datos: la API real y lo que sigue en mock
 
-`src/api/` es la única puerta a la red. Nadie llama a `fetch` fuera de `api/client.js`.
+`src/api/` es la única puerta a la red. Nadie llama a `fetch` fuera de `api/client.js`, salvo
+`api/geocoding.js` (Nominatim, servicio externo: fila de 1 petición/s y caché en localStorage).
 
 - `client.js` — wrapper de fetch, `ApiError` con `status`, `isNotFound`, `isUnavailable`.
   La URL base sale de `VITE_API_URL` (ver `.env.example`); por defecto
@@ -118,14 +119,17 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 - Datos de demostración: `scripts/seed_demo_ibague.py` en el backend los crea vía API, con
   ubicaciones sobre ejes de calles reales descargados de OpenStreetMap (Overpass).
 - `incidents.js` / `inspections.js` — un módulo por recurso, devuelven objetos ya mapeados.
+- `statistics.js` — `GET /road-incidents/stats`. Calcula la ventana de los últimos N periodos
+  (30 días, 12 semanas o 12 meses) en hora de Ibagué y traduce enums a español.
+- `geocoding.js` — `usePlaceNames(points)`: nombre de calle y barrio de las zonas calientes.
 - `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
   cambiar las dependencias.
 
 **Conectadas a la API**: Dashboard (KPIs, mapa, recientes), Mapa, Incidentes (filtros y
 paginación **en servidor**), Detalle de incidente (con cambio de estado real), y el
-contador del sidebar.
+contador del sidebar, y Estadísticas (serie, severidad, tipos, zonas calientes y mapa).
 
-**Todavía en `mock.js`**: Cámaras, Vehículos, Estadísticas, Reportes, Datos, las
+**Todavía en `mock.js`**: Cámaras, Vehículos, Reportes, Datos, las
 notificaciones y las series temporales de los sparklines. El backend no
 modela nada de eso. Donde un dato falso convive con datos reales, la interfaz lo dice
 («dato de demostración»).

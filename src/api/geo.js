@@ -5,7 +5,14 @@
  * encuadre inicial y la traducción de un área visible a los filtros de la API.
  */
 
-export const CITY = { name: 'Ibagué', center: [4.4389, -75.2105], zoom: 13 }
+// Colombia no tiene horario de verano: el desfase es fijo todo el año.
+export const CITY = {
+  name: 'Ibagué',
+  center: [4.4389, -75.2105],
+  zoom: 13,
+  timezone: 'America/Bogota',
+  utcOffset: '-05:00',
+}
 
 /** Área de cobertura de la operación: el casco urbano de Ibagué con algo de margen. */
 export const CITY_BOUNDS = {
