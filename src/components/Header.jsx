@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 import ConnectionStatus from './ConnectionStatus'
 import Icon from './Icon'
 import { THEMES, useTheme } from '../theme/ThemeProvider'
-import { notifications, user } from '../data/mock'
+import { notifications } from '../data/mock'
+import { useAuth } from '../auth/AuthProvider'
 
 export default function Header({ title, crumbs = [], collapsed, onToggleSidebar }) {
   const { theme, cycle } = useTheme()
+  const { user, logout } = useAuth()
   const [openNotifs, setOpenNotifs] = useState(false)
   const ref = useRef(null)
 
@@ -143,6 +145,9 @@ export default function Header({ title, crumbs = [], collapsed, onToggleSidebar 
             <div className="urole">{user.role}</div>
           </div>
         </Link>
+        <button className="iconbtn" onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión">
+          <Icon name="logout" size={17} />
+        </button>
       </div>
     </header>
   )

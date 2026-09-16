@@ -96,6 +96,12 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 - `client.js` — wrapper de fetch, `ApiError` con `status`, `isNotFound`, `isUnavailable`.
   La URL base sale de `VITE_API_URL` (ver `.env.example`); por defecto
   `http://localhost:8000/api/v1`.
+  Manda las cookies (`credentials: 'include'`), reenvía la cookie `simav_csrf` en la cabecera
+  `X-CSRF-Token` en los métodos no seguros y, ante un 401, intenta una vez `POST /auth/refresh`
+  y reintenta; si sigue en 401 avisa al `AuthProvider`. Front y API tienen que usar el mismo
+  host (`localhost` con `localhost`): con `127.0.0.1` el front no lee la cookie CSRF.
+- `auth.js` + `src/auth/AuthProvider.jsx` — login/logout/`/auth/me` reales. `useAuth()` da
+  `{ user, status, login, logout }` y `<RequireAuth/>` protege todas las rutas del shell.
 - `mappers.js` — traduce enums del backend (inglés) a la interfaz (español) y de vuelta:
   `POTHOLE`→`Bache`, `HIGH`→`alta`, `ACTIVE`→`nuevo`, `confidence` 0–1 → 0–100.
   **Las pantallas nunca ven enums y la API nunca ve español.**
@@ -111,7 +117,7 @@ paginación **en servidor**), Detalle de incidente (con cambio de estado real), 
 contador del sidebar.
 
 **Todavía en `mock.js`**: Cámaras, Vehículos, Estadísticas, Reportes, Datos, las
-notificaciones, el usuario, y las series temporales de los sparklines. El backend no
+notificaciones y las series temporales de los sparklines. El backend no
 modela nada de eso. Donde un dato falso convive con datos reales, la interfaz lo dice
 («dato de demostración»).
 

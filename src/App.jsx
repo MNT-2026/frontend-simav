@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
+import { RequireAuth } from './auth/AuthProvider'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import MapPage from './pages/MapPage'
@@ -16,17 +17,19 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/mapa" element={<MapPage />} />
-        <Route path="/incidentes" element={<Incidents />} />
-        <Route path="/incidentes/:id" element={<IncidentDetail />} />
-        <Route path="/camaras" element={<Cameras />} />
-        <Route path="/vehiculos" element={<Vehicles />} />
-        <Route path="/estadisticas" element={<Statistics />} />
-        <Route path="/datos" element={<DataExplorer />} />
-        <Route path="/reportes" element={<Reports />} />
-        <Route path="/configuracion" element={<Settings />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/mapa" element={<MapPage />} />
+          <Route path="/incidentes" element={<Incidents />} />
+          <Route path="/incidentes/:id" element={<IncidentDetail />} />
+          <Route path="/camaras" element={<Cameras />} />
+          <Route path="/vehiculos" element={<Vehicles />} />
+          <Route path="/estadisticas" element={<Statistics />} />
+          <Route path="/datos" element={<DataExplorer />} />
+          <Route path="/reportes" element={<Reports />} />
+          <Route path="/configuracion" element={<Settings />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

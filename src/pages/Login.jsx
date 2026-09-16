@@ -1,26 +1,46 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { Button } from '../components/ui'
+import { useAuth } from '../auth/AuthProvider'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('s.marin@movilidad.gov')
-  const [password, setPassword] = useState('roadvision2026')
+  const location = useLocation()
+  const { status, login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [remember, setRemember] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const submit = (e) => {
+  // A donde se quería ir antes de que RequireAuth mandara aquí.
+  const destino = location.state?.from ?? '/dashboard'
+
+  if (status === 'autenticado') return <Navigate to={destino} replace />
+
+  const submit = async (e) => {
     e.preventDefault()
-    if (password.length < 10) {
-      setError('La contraseña debe tener al menos 10 caracteres.')
+    if (!email.trim() || !password) {
+      setError('Escribe tu correo y tu contraseña.')
       return
     }
     setError('')
     setLoading(true)
-    setTimeout(() => navigate('/dashboard'), 700)
+    try {
+      await login(email.trim(), password)
+      navigate(destino, { replace: true })
+    } catch (err) {
+      setError(
+        err.isUnavailable
+          ? 'No pudimos contactar con el servidor. Inténtalo de nuevo en unos segundos.'
+          : err.isUnauthorized
+            ? 'Correo o contraseña incorrectos.'
+            : err.message
+      )
+      setLoading(false)
+    }
   }
 
   return (
@@ -109,7 +129,7 @@ export default function Login() {
                   {error}
                 </div>
               ) : (
-                <div className="fhint">Mínimo 10 caracteres · se requiere segundo factor</div>
+                <div className="fhint">Mínimo 10 caracteres</div>
               )}
             </div>
 
@@ -140,7 +160,12 @@ export default function Login() {
               <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
             </div>
 
-            <Button type="button" style={{ height: 44 }} onClick={() => navigate('/dashboard')}>
+            <Button
+              type="button"
+              style={{ height: 44 }}
+              disabled
+              title="El acceso por directorio corporativo todavía no está disponible"
+            >
               <Icon name="shield" size={16} strokeWidth={1.9} />
               Directorio corporativo (SSO)
             </Button>

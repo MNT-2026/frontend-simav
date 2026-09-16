@@ -4,7 +4,7 @@ import Icon from './Icon'
 import { THEMES, useTheme } from '../theme/ThemeProvider'
 import { countIncidents } from '../api/incidents'
 import { useApi } from '../api/useApi'
-import { user } from '../data/mock'
+import { useAuth } from '../auth/AuthProvider'
 
 const GROUPS = [
   {
@@ -33,6 +33,7 @@ const GROUPS = [
 
 export default function Sidebar({ collapsed }) {
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
 
   // Incidentes sin revisar: es el numero que decide si alguien entra a la pantalla.
   const fetcher = useCallback(({ signal }) => countIncidents({ status: 'nuevo', signal }), [])
