@@ -10,26 +10,34 @@ import { useState } from 'react'
 const AXIS = 'var(--sub)'
 const GRID = 'var(--line-2)'
 
-export function Sparkline({ points, color = 'var(--acc)', fill = true, height = 34 }) {
-  const max = Math.max(...points)
-  const min = Math.min(...points)
-  const span = max - min || 1
-  const step = 220 / (points.length - 1)
-  const y = (v) => 30 - ((v - min) / span) * 26
+// Con título la mini gráfica es contenido; sin él, decoración que el lector de pantalla salta.
+const sparkA11y = (title) => (title ? { role: 'img', 'aria-label': title } : { 'aria-hidden': true })
+
+/**
+ * Tendencia mínima para una tarjeta KPI. La base es 0 y no el mínimo de la serie: con
+ * conteos pequeños, escalar desde el mínimo convierte 3→4 en un salto dramático.
+ * `title` aparece al pasar el cursor y es lo que lee un lector de pantalla.
+ */
+export function Sparkline({ points, color = 'var(--acc)', fill = true, height = 34, title }) {
+  const max = Math.max(1, ...points)
+  const step = points.length > 1 ? 220 / (points.length - 1) : 0
+  const y = (v) => 30 - (v / max) * 26
   const d = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
   return (
-    <svg viewBox="0 0 220 34" preserveAspectRatio="none" style={{ width: '100%', height }} aria-hidden="true">
+    <svg viewBox="0 0 220 34" preserveAspectRatio="none" style={{ width: '100%', height }} {...sparkA11y(title)}>
+      {title && <title>{title}</title>}
       {fill && <path d={`${d} L220 34 L0 34 Z`} fill={color} opacity="0.09" />}
       <path d={d} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   )
 }
 
-export function SparkBars({ points, color = 'var(--acc)', height = 34 }) {
-  const max = Math.max(...points)
+export function SparkBars({ points, color = 'var(--acc)', height = 34, title }) {
+  const max = Math.max(1, ...points)
   const w = 220 / points.length
   return (
-    <svg viewBox="0 0 220 34" preserveAspectRatio="none" style={{ width: '100%', height }} aria-hidden="true">
+    <svg viewBox="0 0 220 34" preserveAspectRatio="none" style={{ width: '100%', height }} {...sparkA11y(title)}>
+      {title && <title>{title}</title>}
       <g fill={color} opacity="0.6">
         {points.map((v, i) => {
           const h = (v / max) * 28

@@ -125,12 +125,13 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 - `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
   cambiar las dependencias.
 
-**Conectadas a la API**: Dashboard (KPIs, mapa, recientes), Mapa, Incidentes (filtros y
-paginación **en servidor**), Detalle de incidente (con cambio de estado real), y el
-contador del sidebar, y Estadísticas (serie, severidad, tipos, zonas calientes y mapa).
+**Conectadas a la API**: Dashboard (KPIs, mini gráficas semanales de total, baches, grietas y
+críticos, mapa y recientes), Mapa, Incidentes (filtros y paginación **en servidor**), Detalle
+de incidente (con cambio de estado real), el contador del sidebar, y Estadísticas (serie,
+severidad, tipos, zonas calientes y mapa).
 
-**Todavía en `mock.js`**: Cámaras, Vehículos, Reportes, Datos, las
-notificaciones y las series temporales de los sparklines. El backend no
+**Todavía en `mock.js`**: Cámaras, Vehículos, Reportes, Datos, las notificaciones y, en el
+Dashboard, los kilómetros analizados y las cámaras activas. El backend no
 modela nada de eso. Donde un dato falso convive con datos reales, la interfaz lo dice
 («dato de demostración»).
 

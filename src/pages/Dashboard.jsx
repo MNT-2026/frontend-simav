@@ -7,8 +7,9 @@ import { Button, Card, ErrorState, SeverityBadge, Skeleton } from '../components
 import { useFakeExport } from '../components/Toasts'
 import { countIncidents, listIncidents } from '../api/incidents'
 import { CITY_BOUNDS, toBoundsParams } from '../api/geo'
+import { getStatistics } from '../api/statistics'
 import { useApi } from '../api/useApi'
-import { criticalTrend, vehicles, weeklyTrend } from '../data/mock'
+import { vehicles } from '../data/mock'
 
 const SEVERITY_COLOR = { alta: 'var(--high)', media: 'var(--med)', baja: 'var(--low)' }
 const SEVERITY_LABEL = { alta: 'Alta', media: 'Media', baja: 'Baja' }
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const exportFile = useFakeExport()
 
   const fetcher = useCallback(async ({ signal }) => {
-    const [total, potholes, cracks, high, medium, low, recent, onMap] = await Promise.all([
+    const [total, potholes, cracks, high, medium, low, recent, onMap, weekly] = await Promise.all([
       countIncidents({ signal }),
       countIncidents({ type: 'Bache', signal }),
       countIncidents({ type: 'Grieta', signal }),
@@ -27,8 +28,19 @@ export default function Dashboard() {
       countIncidents({ severity: 'baja', signal }),
       listIncidents({ limit: 5, signal }),
       listIncidents({ bounds: toBoundsParams(CITY_BOUNDS), limit: 100, signal }),
+      // Solo la serie semanal para las mini gráficas: las zonas no se usan aquí.
+      getStatistics({ grain: 'Semana', hotspotsLimit: 1, signal }),
     ])
+    const series = (pick) => weekly.timeline.map(pick)
     return {
+      trends: {
+        total: series((p) => p.total),
+        potholes: series((p) => p.byType.Bache ?? 0),
+        cracks: series((p) => p.byType.Grieta ?? 0),
+        high: series((p) => p.bySeverity.alta ?? 0),
+        weeks: weekly.timeline.length,
+        from: weekly.timeline[0]?.label,
+      },
       total,
       potholes,
       cracks,
@@ -60,8 +72,6 @@ export default function Dashboard() {
     )
   }
 
-  const trend = weeklyTrend.map((w) => w.value)
-
   return (
     <main className="content">
       <div className="row-between">
@@ -82,7 +92,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {loading ? <KpiSkeleton /> : <KpiRow data={data} trend={trend} />}
+      {loading ? <KpiSkeleton /> : <KpiRow data={data} />}
 
       <div className="dashboard-main" style={{ flex: 1, display: 'flex', gap: 14, minHeight: 420 }}>
         <RoadMap
@@ -222,18 +232,22 @@ export default function Dashboard() {
   )
 }
 
-function KpiRow({ data, trend }) {
+function KpiRow({ data }) {
   const share = (n) => (data.total ? `${Math.round((n / data.total) * 100)}% del total` : 'Sin datos')
+  const { trends } = data
+  // Al pasar el cursor: qué muestra la mini gráfica y sus valores, de la semana más antigua a la actual.
+  const title = (what, points) =>
+    `${what} por semana, últimas ${trends.weeks} (desde el ${trends.from}): ${points.join(', ')}`
   return (
     <div className="kpis">
-      <Kpi icon="incident" label="Incidentes totales" value={String(data.total)}>
-        <Sparkline points={trend} color="var(--s1)" />
+      <Kpi icon="incident" label="Incidentes totales" value={String(data.total)} note={weekNote(trends.total)}>
+        <Sparkline points={trends.total} color="var(--s1)" title={title('Incidentes', trends.total)} />
       </Kpi>
       <Kpi icon="pothole" label="Baches" value={String(data.potholes)} note={share(data.potholes)}>
-        <SparkBars points={[16, 13, 19, 15, 22, 18, 25, 21, 28]} color="var(--s1)" />
+        <SparkBars points={trends.potholes} color="var(--s1)" title={title('Baches', trends.potholes)} />
       </Kpi>
       <Kpi icon="crack" label="Grietas" value={String(data.cracks)} note={share(data.cracks)}>
-        <SparkBars points={[24, 20, 22, 17, 19, 14, 16, 12, 13]} color="var(--s2)" />
+        <SparkBars points={trends.cracks} color="var(--s2)" title={title('Grietas', trends.cracks)} />
       </Kpi>
       <Kpi
         critical
@@ -243,7 +257,7 @@ function KpiRow({ data, trend }) {
         valueColor="var(--high-ink)"
         note={share(data.severities.alta)}
       >
-        <Sparkline points={criticalTrend} color="var(--high)" />
+        <Sparkline points={trends.high} color="var(--high)" title={title('Críticos', trends.high)} />
       </Kpi>
       <Kpi icon="km" label="Kilómetros analizados" value="35.7" unit="km" note="dato de demostración">
         <Sparkline points={[28, 25, 26, 21, 23, 17, 15, 12, 10].reverse()} color="var(--acc)" fill={false} />
@@ -295,4 +309,11 @@ function Thumb({ type }) {
       )}
     </svg>
   )
+}
+
+/** «4 esta semana»: la semana en curso es la última de la serie. */
+function weekNote(points) {
+  if (!points.length) return undefined
+  const current = points[points.length - 1]
+  return `${current} esta semana`
 }

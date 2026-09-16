@@ -28,8 +28,6 @@ export const weeklyTrend = [
   { label: 'S34', value: 42 },
 ]
 
-export const criticalTrend = [4, 5, 7, 6, 9, 8, 11, 13, 16]
-
 /** Marcadores del mapa en coordenadas del viewBox 0 0 1200 840. */
 export const mapMarkers = [
   { id: 'IGB-00231', x: 560, y: 286, severity: 'alta' },
