@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
+import { VehicleMap } from '../components/RoadMap'
 import { Button, Card, StatusBadge } from '../components/ui'
-import { vehicles } from '../data/mock'
+import { vehicles as fleet } from '../data/mock'
+import { VEHICLE_ROUTES } from '../data/vehicleRoutes'
+
+// Cada bus con su posición y recorrido reales sobre calles de Ibagué.
+const vehicles = fleet.map((x) => ({ ...x, ...VEHICLE_ROUTES[x.id] }))
 
 export default function Vehicles() {
   const navigate = useNavigate()
@@ -74,47 +79,23 @@ export default function Vehicles() {
             <div>
               <div className="card-title mono">{v.id}</div>
               <div className="sub-text" style={{ fontSize: 11, marginTop: 2 }}>
-                Padrón 2021 · {v.route}
+                {v.route} · {v.street}
               </div>
             </div>
             <span className="spacer" />
             <StatusBadge value={v.status} />
           </div>
 
-          <div style={{ position: 'relative', height: 184, background: 'var(--map-bg)', borderBottom: '1px solid var(--line)' }}>
-            <svg
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-              viewBox="0 0 372 184"
-              preserveAspectRatio="xMidYMid slice"
-              role="img"
-              aria-label="Posición del vehículo"
-            >
-              <rect width="372" height="184" fill="var(--map-bg)" />
-              <g stroke="var(--map-road-2)" strokeWidth="2" fill="none">
-                <path d="M0 46h372M0 138h372M76 0v184M280 0v184" />
-              </g>
-              <g stroke="var(--map-road)" strokeWidth="8" fill="none" strokeLinecap="round">
-                <path d="M0 92h372" />
-                <path d="M176 0v184" />
-              </g>
-              <path
-                d="M14 168 C70 130 96 96 176 84 C246 74 288 46 360 26"
-                fill="none"
-                stroke="var(--map-route)"
-                strokeWidth="3"
-                strokeDasharray="9 7"
-                opacity="0.8"
-              />
-              <circle cx="176" cy="84" r="17" fill="var(--acc)" opacity="0.22" />
-              <circle cx="176" cy="84" r="9" fill="var(--acc)" />
-              <circle cx="176" cy="84" r="3.4" fill="var(--surf)" />
-              <circle cx="96" cy="122" r="5.5" fill="var(--high)" stroke="var(--map-bg)" strokeWidth="2" />
-              <circle cx="256" cy="58" r="5.5" fill="var(--med)" stroke="var(--map-bg)" strokeWidth="2" />
-            </svg>
+          <VehicleMap
+            className="flush"
+            style={{ height: 230, flex: '0 0 230px', borderBottom: '1px solid var(--line)' }}
+            vehicles={vehicles}
+            selected={selected}
+            onSelect={setSelected}
+          >
             <div
-              className="mono"
+              className="mono map-overlay"
               style={{
-                position: 'absolute',
                 left: 10,
                 bottom: 10,
                 background: 'var(--surf)',
@@ -125,12 +106,14 @@ export default function Vehicles() {
                 fontWeight: 700,
               }}
             >
-              4.65124, −74.07213 · 28 km/h
+              {v.position[0].toFixed(5)}, {v.position[1].toFixed(5)} ·{' '}
+              {v.status === 'offline' ? 'última posición' : `${v.speed} km/h`}
             </div>
-          </div>
+          </VehicleMap>
 
           <Row k="Cámaras instaladas" v={v.cameras.join(' · ') || '—'} mono />
           <Row k="Ruta asignada" v={v.route} />
+          <Row k="Vía actual" v={v.street} />
           <Row k="Última transmisión" v={v.lastTx} mono />
           <Row k="Km recorridos (hoy)" v={`${v.km} km`} mono />
           <Row k="Km analizados (hoy)" v={`${v.kmAnalyzed} km`} mono />

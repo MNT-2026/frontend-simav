@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import RoadMap, { EvidenceFrame } from '../components/RoadMap'
 import { Button, ErrorState, SeverityBadge, StatusBadge } from '../components/ui'
 import { useToasts } from '../components/Toasts'
-import { listIncidents, updateIncidentStatus } from '../api/incidents'
-import { CITY_BOUNDS, toBoundsParams, toCanvas } from '../api/projection'
+import { getIncident, listIncidents, updateIncidentStatus } from '../api/incidents'
+import { CITY, CITY_BOUNDS, toBoundsParams } from '../api/geo'
 import { useApi } from '../api/useApi'
 
 const FILTERS = [
@@ -13,25 +13,36 @@ const FILTERS = [
   { id: 'media', label: 'Media', color: 'var(--med)' },
   { id: 'baja', label: 'Baja', color: 'var(--low)' },
 ]
+const SEVERITY_LABEL = { alta: 'Alta', media: 'Media', baja: 'Baja' }
 
-/** El lienzo del mapa no hace zoom todavía, así que pedimos todo el área de cobertura. */
+/** Máximo que admite la API por página; el área visible rara vez tiene más. */
 const MAP_PAGE_SIZE = 100
 
 export default function MapPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { push } = useToasts()
+  const focusId = location.state?.focus ?? null
   const [active, setActive] = useState(['alta', 'media', 'baja'])
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState(focusId)
   const [saving, setSaving] = useState(false)
+  // Área visible del mapa; hasta que Leaflet la informe se usa la cobertura de la ciudad.
+  const [bounds, setBounds] = useState(CITY_BOUNDS)
 
-  // Una sola consulta por área; el filtro de severidad se aplica sobre lo ya traído
+  // Al llegar desde el detalle de un incidente se centra el mapa en él.
+  const focusFetcher = useCallback(
+    ({ signal }) => (focusId ? getIncident(focusId, { signal }) : Promise.resolve(null)),
+    [focusId]
+  )
+  const { data: focusIncident } = useApi(focusFetcher, [focusId])
+
+  // Una consulta por área visible; el filtro de severidad se aplica sobre lo ya traído
   // para que apagar una chincheta no dispare otra petición.
   const fetcher = useCallback(
-    ({ signal }) =>
-      listIncidents({ bounds: toBoundsParams(CITY_BOUNDS), limit: MAP_PAGE_SIZE, signal }),
-    []
+    ({ signal }) => listIncidents({ bounds: toBoundsParams(bounds), limit: MAP_PAGE_SIZE, signal }),
+    [bounds]
   )
-  const { data, loading, error, reload } = useApi(fetcher, [])
+  const { data, loading, error, reload } = useApi(fetcher, [bounds])
 
   const incidents = useMemo(() => data?.items ?? [], [data])
 
@@ -45,7 +56,13 @@ export default function MapPage() {
     () =>
       incidents
         .filter((i) => active.includes(i.severity))
-        .map((i) => ({ id: i.id, severity: i.severity, ...toCanvas({ lat: i.lat, lon: i.lon }) })),
+        .map((i) => ({
+          id: i.id,
+          severity: i.severity,
+          lat: i.lat,
+          lon: i.lon,
+          label: `${i.type} · ${SEVERITY_LABEL[i.severity] ?? i.severity}`,
+        })),
     [incidents, active]
   )
 
@@ -86,9 +103,10 @@ export default function MapPage() {
         className="flush"
         style={{ flex: 1 }}
         markers={markers}
-        clusters={[]}
         selected={selected}
         onSelect={setSelected}
+        onBoundsChange={setBounds}
+        focus={focusIncident}
       >
         <div className="map-overlay" style={{ top: 14, left: 14 }}>
           <span className="gchip on">
@@ -107,11 +125,11 @@ export default function MapPage() {
         </div>
 
         <div
+          className="map-stats"
           style={{
             position: 'absolute',
             left: 14,
             bottom: 14,
-            zIndex: 2,
             background: 'var(--surf)',
             border: '1px solid var(--line)',
             borderRadius: 11,
@@ -122,16 +140,26 @@ export default function MapPage() {
             boxShadow: 'var(--shadow)',
           }}
         >
-          <Stat label="ÁREA VISIBLE" value="Cobertura completa" />
+          <Stat label="CIUDAD" value={CITY.name} />
           <Stat
-            label="LATITUD"
-            value={`${CITY_BOUNDS.minLatitude} – ${CITY_BOUNDS.maxLatitude}`}
+            label="ÁREA VISIBLE"
+            value={`${bounds.minLatitude.toFixed(3)}, ${bounds.minLongitude.toFixed(3)} → ${bounds.maxLatitude.toFixed(3)}, ${bounds.maxLongitude.toFixed(3)}`}
             mono
           />
-          <Stat label="INCIDENTES" value={loading ? '…' : String(markers.length)} mono />
+          <Stat
+            label="INCIDENTES"
+            value={
+              loading
+                ? '…'
+                : data && data.total > incidents.length
+                  ? `${markers.length} de ${data.total}`
+                  : String(markers.length)
+            }
+            mono
+          />
           <span style={{ width: 1, height: 34, background: 'var(--line)' }} />
           <span className="mono sub-text" style={{ fontSize: 11 }}>
-            Posiciones proyectadas · sin cartografía real
+            Filtrado por área visible
           </span>
         </div>
       </RoadMap>

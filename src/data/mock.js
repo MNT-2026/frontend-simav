@@ -131,15 +131,16 @@ export const cameras = [
   { id: 'CAM-04', vehicle: null, status: 'offline', lastSeen: 'hace 2 d 4 h', km: 0, incidents: 0, route: '—', confidence: 0, firmware: '2.2.4' },
 ]
 
+// Posición y recorrido de cada bus sobre calles reales: ver `vehicleRoutes.js`.
 export const vehicles = [
-  { id: 'BUS-117', cameras: ['CAM-03'], route: 'Troncal Norte–Centro', status: 'transmitiendo', lastTx: 'hace 12 s', km: 24.6, kmAnalyzed: 9.4, incidents: 41, driver: 'J. Ramírez · turno 2' },
-  { id: 'BUS-204', cameras: ['CAM-06', 'CAM-07'], route: 'Circular Centro', status: 'transmitiendo', lastTx: 'hace 9 s', km: 18.2, kmAnalyzed: 7.2, incidents: 25, driver: 'L. Ortega · turno 1' },
-  { id: 'BUS-088', cameras: ['CAM-01'], route: 'Ruta Sur', status: 'advertencia', lastTx: 'hace 3 min', km: 15.7, kmAnalyzed: 6.2, incidents: 22, driver: 'M. Duarte · turno 2' },
-  { id: 'BUS-055', cameras: ['CAM-02'], route: 'Alimentadora Oeste', status: 'transmitiendo', lastTx: 'hace 21 s', km: 12.9, kmAnalyzed: 4.8, incidents: 15, driver: 'A. Peña · turno 1' },
-  { id: 'BUS-142', cameras: ['CAM-05'], route: 'Troncal Oriente', status: 'transmitiendo', lastTx: 'hace 6 s', km: 19.4, kmAnalyzed: 5.1, incidents: 18, driver: 'R. Cano · turno 2' },
-  { id: 'BUS-311', cameras: ['CAM-08', 'CAM-09', 'CAM-10'], route: 'Circular Norte', status: 'transmitiendo', lastTx: 'hace 33 s', km: 21.1, kmAnalyzed: 4.2, incidents: 26, driver: 'S. Vidal · turno 1' },
-  { id: 'BUS-076', cameras: [], route: 'Alimentadora Este', status: 'offline', lastTx: 'hace 1 d', km: 6.5, kmAnalyzed: 0, incidents: 0, driver: '—' },
-  { id: 'BUS-290', cameras: [], route: 'Reserva', status: 'offline', lastTx: '—', km: 10, kmAnalyzed: 0, incidents: 0, driver: '—' },
+  { id: 'BUS-117', cameras: ['CAM-03'], route: 'Troncal Norte–Centro', status: 'transmitiendo', lastTx: 'hace 12 s', km: 24.6, kmAnalyzed: 9.4, incidents: 41, driver: 'J. Ramírez · turno 2', speed: 28 },
+  { id: 'BUS-204', cameras: ['CAM-06', 'CAM-07'], route: 'Circular Centro', status: 'transmitiendo', lastTx: 'hace 9 s', km: 18.2, kmAnalyzed: 7.2, incidents: 25, driver: 'L. Ortega · turno 1', speed: 19 },
+  { id: 'BUS-088', cameras: ['CAM-01'], route: 'Ruta Sur', status: 'advertencia', lastTx: 'hace 3 min', km: 15.7, kmAnalyzed: 6.2, incidents: 22, driver: 'M. Duarte · turno 2', speed: 0 },
+  { id: 'BUS-055', cameras: ['CAM-02'], route: 'Alimentadora Oeste', status: 'transmitiendo', lastTx: 'hace 21 s', km: 12.9, kmAnalyzed: 4.8, incidents: 15, driver: 'A. Peña · turno 1', speed: 34 },
+  { id: 'BUS-142', cameras: ['CAM-05'], route: 'Troncal Oriente', status: 'transmitiendo', lastTx: 'hace 6 s', km: 19.4, kmAnalyzed: 5.1, incidents: 18, driver: 'R. Cano · turno 2', speed: 41 },
+  { id: 'BUS-311', cameras: ['CAM-08', 'CAM-09', 'CAM-10'], route: 'Circular Norte', status: 'transmitiendo', lastTx: 'hace 33 s', km: 21.1, kmAnalyzed: 4.2, incidents: 26, driver: 'S. Vidal · turno 1', speed: 23 },
+  { id: 'BUS-076', cameras: [], route: 'Alimentadora Este', status: 'offline', lastTx: 'hace 1 d', km: 6.5, kmAnalyzed: 0, incidents: 0, driver: '—', speed: 0 },
+  { id: 'BUS-290', cameras: [], route: 'Reserva', status: 'offline', lastTx: '—', km: 10, kmAnalyzed: 0, incidents: 0, driver: '—', speed: 0 },
 ]
 
 export const notifications = [

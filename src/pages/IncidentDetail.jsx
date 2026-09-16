@@ -261,11 +261,23 @@ export default function IncidentDetail() {
             <div className="card-head">
               <span className="card-title">Ubicación exacta</span>
               <span className="spacer" />
-              <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mapa') }} style={{ fontSize: 11.5 }}>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate('/mapa', { state: { focus: incident.id } })
+                }}
+                style={{ fontSize: 11.5 }}
+              >
                 Abrir en el mapa
               </a>
             </div>
-            <MiniMap severity={incident.severity} style={{ flex: 1, minHeight: 0 }} />
+            <MiniMap
+              lat={incident.lat}
+              lon={incident.lon}
+              severity={incident.severity}
+              style={{ flex: 1, minHeight: 0 }}
+            />
             <div style={{ padding: '11px 15px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8 }}>
               <Button
                 style={{ flex: 1 }}

@@ -5,6 +5,7 @@ import App from './App'
 import { ThemeProvider } from './theme/ThemeProvider'
 import { ToastProvider } from './components/Toasts'
 import { AuthProvider } from './auth/AuthProvider'
+import 'leaflet/dist/leaflet.css'
 import './styles/tokens.css'
 import './styles/app.css'
 

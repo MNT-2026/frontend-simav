@@ -1,151 +1,194 @@
-const SEV_COLOR = { alta: 'var(--high)', media: 'var(--med)', baja: 'var(--low)' }
+import { useEffect } from 'react'
+import {
+  Circle,
+  CircleMarker,
+  MapContainer,
+  Polyline,
+  TileLayer,
+  Tooltip,
+  ZoomControl,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
+import { CITY, fromLeafletBounds } from '../api/geo'
+
 const SEV_RADIUS = { alta: 9, media: 8, baja: 7 }
 
 /**
- * Mapa vectorial de ROADVISION.
- * Todos los colores salen de tokens, así que el mapa cambia con el tema
- * — salvo los marcadores de severidad, que son idénticos en Light, Dark y Night.
+ * Teselas estándar de OpenStreetMap: gratuitas y sin clave. El mapa es siempre claro,
+ * sea cual sea el tema de la plataforma, para que las calles se lean igual en todos.
+ */
+const TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+}
+
+function Tiles() {
+  return <TileLayer url={TILES.url} attribution={TILES.attribution} maxZoom={19} />
+}
+
+/**
+ * Lienzo del mapa. Fija el tema claro solo aquí dentro: marcadores, tooltips y controles
+ * de Leaflet toman los tokens claros aunque la plataforma esté en dark o night.
+ */
+function MapCanvas({ children, ...options }) {
+  return (
+    <div className="map-canvas" data-theme="light">
+      <MapContainer {...options}>{children}</MapContainer>
+    </div>
+  )
+}
+
+/** Avisa del área visible al cargar y después de cada arrastre o zoom. */
+function BoundsWatcher({ onChange }) {
+  const map = useMapEvents({
+    moveend: () => onChange?.(fromLeafletBounds(map.getBounds())),
+  })
+  useEffect(() => {
+    map.whenReady(() => onChange?.(fromLeafletBounds(map.getBounds())))
+    // Solo al montar: después manda moveend.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map])
+  return null
+}
+
+/** Leaflet mide el contenedor una vez; si cambia (se abre un panel), hay que avisarle. */
+function SizeWatcher() {
+  const map = useMap()
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize())
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+  return null
+}
+
+/** Centra el mapa en un punto cuando cambia (p. ej. al llegar desde el detalle). */
+function FocusOn({ point, zoom = 17 }) {
+  const map = useMap()
+  const lat = point?.lat
+  const lon = point?.lon
+  useEffect(() => {
+    if (lat != null && lon != null) map.setView([lat, lon], Math.max(map.getZoom(), zoom))
+  }, [map, lat, lon, zoom])
+  return null
+}
+
+/**
+ * Mapa interactivo de ROADVISION sobre OpenStreetMap, centrado en Ibagué.
+ *
+ * `markers` son `{ id, severity, lat, lon, label? }`. Los colores de los marcadores salen
+ * de clases CSS (`.sev-alta`…) y no de `pathOptions`, así siguen viniendo de los tokens.
  */
 export default function RoadMap({
   markers = [],
-  clusters = [],
   selected,
   onSelect,
-  showRoute = true,
-  showLabels = true,
+  onBoundsChange,
+  focus,
   className = '',
   children,
   style,
 }) {
   return (
     <div className={`mapwrap ${className}`} style={style}>
-      <svg viewBox="0 0 1200 840" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa de incidentes">
-        <rect width="1200" height="840" fill="var(--map-bg)" />
-
-        {/* manzanas verdes y agua */}
-        <rect x="80" y="90" width="300" height="190" fill="var(--map-park)" rx="4" />
-        <rect x="820" y="560" width="340" height="240" fill="var(--map-park)" rx="4" />
-        <path
-          d="M-20 700 C180 660 360 740 600 700 C840 660 1000 740 1220 690 L1220 860 L-20 860Z"
-          fill="var(--map-water)"
-        />
-
-        {/* trama menor */}
-        <g stroke="var(--map-road-2)" strokeWidth="3" fill="none">
-          <path d="M0 140h1200M0 240h1200M0 440h1200M0 540h1200M0 640h1200M0 760h1200" />
-          <path d="M120 0v840M230 0v840M450 0v840M640 0v840M740 0v840M950 0v840M1060 0v840" />
-        </g>
-
-        {/* arterias */}
-        <g stroke="var(--map-road)" strokeWidth="12" fill="none" strokeLinecap="round">
-          <path d="M0 340h1200" />
-          <path d="M340 0v840" />
-          <path d="M850 0v840" />
-          <path d="M0 780 L1200 720" />
-        </g>
-        <g stroke="var(--map-road)" strokeWidth="6" fill="none" strokeLinecap="round">
-          <path d="M0 180 L1200 150" />
-          <path d="M560 0v840" />
-          <path d="M0 520 L1200 500" />
-        </g>
-
-        {showRoute && (
-          <path
-            d="M60 800 C200 700 280 560 340 440 C400 322 470 300 560 286 C680 268 760 230 850 178 C930 132 1040 110 1180 96"
-            fill="none"
-            stroke="var(--map-route)"
-            strokeWidth="4"
-            strokeDasharray="12 9"
-            strokeLinecap="round"
-            opacity="0.85"
-          />
-        )}
+      <MapCanvas center={CITY.center} zoom={CITY.zoom} zoomControl={false} minZoom={11}>
+        <Tiles />
+        <ZoomControl position="bottomright" />
+        <SizeWatcher />
+        <BoundsWatcher onChange={onBoundsChange} />
+        <FocusOn point={focus} />
 
         {markers.map((m) => {
-          const color = SEV_COLOR[m.severity]
-          const r = SEV_RADIUS[m.severity]
           const isSel = selected === m.id
           return (
-            <g key={m.id} className="marker" onClick={() => onSelect?.(m.id)}>
-              <circle cx={m.x} cy={m.y} r={r * 2.6} fill={color} opacity="var(--map-halo)" />
-              {isSel && (
-                <circle cx={m.x} cy={m.y} r={r + 12} fill="none" stroke="var(--map-route)" strokeWidth="2.5" />
+            <CircleMarker
+              // Leaflet solo aplica className al crear la capa: al seleccionar se recrea.
+              key={`${m.id}:${isSel}`}
+              center={[m.lat, m.lon]}
+              radius={isSel ? SEV_RADIUS[m.severity] + 4 : SEV_RADIUS[m.severity]}
+              pathOptions={{ className: `sev-marker sev-${m.severity}${isSel ? ' sel' : ''}` }}
+              eventHandlers={{ click: () => onSelect?.(m.id) }}
+            >
+              {m.label && (
+                <Tooltip direction="top" offset={[0, -8]}>
+                  {m.label}
+                </Tooltip>
               )}
-              <circle
-                cx={m.x}
-                cy={m.y}
-                r={isSel ? r + 4 : r}
-                fill={color}
-                stroke="var(--map-bg)"
-                strokeWidth="2.5"
-              />
-            </g>
+            </CircleMarker>
           )
         })}
-
-        {clusters.map((c) => (
-          <g key={c.id} className="marker">
-            <circle cx={c.x} cy={c.y} r="34" fill={SEV_COLOR[c.severity]} opacity="var(--map-halo)" />
-            <circle cx={c.x} cy={c.y} r="24" fill="var(--surf)" stroke="var(--line)" strokeWidth="1.5" />
-            <text
-              x={c.x}
-              y={c.y + 5}
-              textAnchor="middle"
-              fontFamily="IBM Plex Mono, monospace"
-              fontSize="15"
-              fontWeight="600"
-              fill="var(--acc)"
-            >
-              {c.count}
-            </text>
-          </g>
-        ))}
-
-        {showLabels && (
-          <g
-            fill="var(--map-label)"
-            fontFamily="Manrope, sans-serif"
-            fontSize="12"
-            fontWeight="700"
-            letterSpacing="1.5"
-          >
-            <text x="104" y="122">PARQUE NORTE</text>
-            <text x="846" y="592">ZONA INDUSTRIAL</text>
-            <text x="366" y="322">AV. TRONCAL</text>
-            <text x="60" y="742">RÍO ORIENTE</text>
-          </g>
-        )}
-      </svg>
+      </MapCanvas>
       {children}
     </div>
   )
 }
 
-/** Mapa reducido para fichas de detalle: un solo punto con radio de precisión. */
-export function MiniMap({ severity = 'alta', style }) {
+/** Mapa reducido para fichas de detalle: un solo punto con su radio de precisión. */
+export function MiniMap({ lat, lon, severity = 'alta', style }) {
   return (
     <div className="mapwrap flush" style={{ position: 'relative', ...style }}>
-      <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Ubicación exacta">
-        <rect width="400" height="240" fill="var(--map-bg)" />
-        <rect x="18" y="16" width="110" height="70" fill="var(--map-park)" rx="3" />
-        <g stroke="var(--map-road-2)" strokeWidth="2" fill="none">
-          <path d="M0 60h400M0 180h400M90 0v240M300 0v240" />
-        </g>
-        <g stroke="var(--map-road)" strokeWidth="9" fill="none" strokeLinecap="round">
-          <path d="M0 122h400" />
-          <path d="M196 0v240" />
-        </g>
-        <g stroke="var(--map-road)" strokeWidth="4.5" fill="none">
-          <path d="M0 40 L400 30" />
-          <path d="M0 206 L400 214" />
-        </g>
-        <circle cx="196" cy="122" r="30" fill={SEV_COLOR[severity]} opacity="var(--map-halo)" />
-        <circle cx="196" cy="122" r="19" fill="none" stroke="var(--map-route)" strokeWidth="2" strokeDasharray="4 4" />
-        <circle cx="196" cy="122" r="9" fill={SEV_COLOR[severity]} stroke="var(--surf)" strokeWidth="3" />
-        <text x="16" y="230" fontFamily="IBM Plex Mono, monospace" fontSize="10" fill="var(--map-label)">
-          200 m
-        </text>
-      </svg>
+      <MapCanvas center={[lat, lon]} zoom={17} scrollWheelZoom={false}>
+        <Tiles />
+        <SizeWatcher />
+        <FocusOn point={{ lat, lon }} />
+        <Circle center={[lat, lon]} radius={15} pathOptions={{ className: 'precision' }} />
+        <CircleMarker center={[lat, lon]} radius={9} pathOptions={{ className: `sev-marker sev-${severity}` }} />
+      </MapCanvas>
+    </div>
+  )
+}
+
+/** Encuadra el recorrido del bus seleccionado cada vez que cambia la selección. */
+function FitRoute({ id, path, position }) {
+  const map = useMap()
+  useEffect(() => {
+    const puntos = path?.length ? path : position ? [position] : []
+    if (!puntos.length) return
+    map.fitBounds(puntos, { padding: [24, 24], maxZoom: 16 })
+    // El id basta como dependencia: path y position cambian con él.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, id])
+  return null
+}
+
+/**
+ * Flota sobre el mapa real de Ibagué. `vehicles` son `{ id, status, position: [lat, lon],
+ * path: [[lat, lon], …] }`; se dibujan todos los buses y el recorrido del seleccionado.
+ */
+export function VehicleMap({ vehicles = [], selected, onSelect, className = '', style, children }) {
+  const current = vehicles.find((v) => v.id === selected)
+  return (
+    <div className={`mapwrap ${className}`} style={style}>
+      <MapCanvas center={CITY.center} zoom={CITY.zoom} zoomControl={false} minZoom={11}>
+        <Tiles />
+        <ZoomControl position="bottomright" />
+        <SizeWatcher />
+        <FitRoute id={current?.id} path={current?.path} position={current?.position} />
+
+        {current?.path?.length > 1 && (
+          <Polyline positions={current.path} pathOptions={{ className: 'route-line' }} />
+        )}
+
+        {vehicles.map((v) => {
+          const isSel = v.id === selected
+          const offline = v.status === 'offline'
+          return (
+            <CircleMarker
+              key={`${v.id}:${isSel}`}
+              center={v.position}
+              radius={isSel ? 10 : 7}
+              pathOptions={{ className: `bus-marker${offline ? ' offline' : ''}${isSel ? ' sel' : ''}` }}
+              eventHandlers={{ click: () => onSelect?.(v.id) }}
+            >
+              <Tooltip direction="top" offset={[0, -8]} permanent={isSel}>
+                {v.id}
+              </Tooltip>
+            </CircleMarker>
+          )
+        })}
+      </MapCanvas>
+      {children}
     </div>
   )
 }

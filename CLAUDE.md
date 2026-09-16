@@ -79,8 +79,15 @@ Token discipline that the design depends on:
   Switch, Skeleton, EmptyState, ErrorState, Modal, Pager, Delta. Reuse these rather than restyling.
 - `components/charts.jsx` — hand-rolled SVG charts (Sparkline, SparkBars, TrendChart, GroupedBars,
   RankBars, SeverityBar, GeoDensity, Legend). No charting library; keep it that way.
-- `components/RoadMap.jsx` — a hand-drawn SVG city map (`viewBox="0 0 1200 840"`) with markers,
-  clusters and an optional route. No map library, no tiles; map colors are tokens so it themes.
+- `components/RoadMap.jsx` — real interactive map of Ibagué with **Leaflet + react-leaflet** over
+  free OpenStreetMap tiles (no API key). **The map is always light**, whatever the app theme:
+  the canvas carries `data-theme="light"` so markers, tooltips and controls use light tokens. Markers are
+  `CircleMarker`s colored through CSS classes (`.sev-alta`, `.sev-media`, `.sev-baja`) so colors
+  still come from tokens; Leaflet only applies `className` on creation, so selection re-keys the
+  marker. Overlays passed as children need `z-index: 1000` (see `.mapwrap .map-overlay`).
+  `MiniMap` shows a single point; `VehicleMap` shows the fleet (all buses + the selected bus route,
+  from `data/vehicleRoutes.js`, generated from OSM street geometry). `EvidenceFrame` is still a
+  simulated SVG frame.
 - Toasts: `const { push } = useToasts()` for notices, `useFakeExport()` for export flows.
 
 ## Mock-data coherence
@@ -105,9 +112,11 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 - `mappers.js` — traduce enums del backend (inglés) a la interfaz (español) y de vuelta:
   `POTHOLE`→`Bache`, `HIGH`→`alta`, `ACTIVE`→`nuevo`, `confidence` 0–1 → 0–100.
   **Las pantallas nunca ven enums y la API nunca ve español.**
-- `projection.js` — `RoadMap` dibuja sobre un `viewBox` inventado, así que las
-  coordenadas se proyectan linealmente sobre `CITY_BOUNDS`. Las posiciones relativas son
-  correctas; no coinciden con las calles dibujadas.
+- `geo.js` — ciudad de la operación (`CITY`, Ibagué), su área de cobertura `CITY_BOUNDS` y
+  la traducción de un área de Leaflet a los filtros `min_/max_latitude/longitude` de la API.
+  El Mapa pide de nuevo al servidor cada vez que cambia el área visible.
+- Datos de demostración: `scripts/seed_demo_ibague.py` en el backend los crea vía API, con
+  ubicaciones sobre ejes de calles reales descargados de OpenStreetMap (Overpass).
 - `incidents.js` / `inspections.js` — un módulo por recurso, devuelven objetos ya mapeados.
 - `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
   cambiar las dependencias.

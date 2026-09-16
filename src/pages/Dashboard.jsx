@@ -6,7 +6,7 @@ import { Sparkline, SparkBars } from '../components/charts'
 import { Button, Card, ErrorState, SeverityBadge, Skeleton } from '../components/ui'
 import { useFakeExport } from '../components/Toasts'
 import { countIncidents, listIncidents } from '../api/incidents'
-import { CITY_BOUNDS, toBoundsParams, toCanvas } from '../api/projection'
+import { CITY_BOUNDS, toBoundsParams } from '../api/geo'
 import { useApi } from '../api/useApi'
 import { criticalTrend, vehicles, weeklyTrend } from '../data/mock'
 
@@ -37,7 +37,9 @@ export default function Dashboard() {
       markers: onMap.items.map((i) => ({
         id: i.id,
         severity: i.severity,
-        ...toCanvas({ lat: i.lat, lon: i.lon }),
+        lat: i.lat,
+        lon: i.lon,
+        label: `${i.type} · ${SEVERITY_LABEL[i.severity] ?? i.severity}`,
       })),
     }
   }, [])
