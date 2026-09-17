@@ -79,6 +79,10 @@ function FocusOn({ point, zoom = 17 }) {
  *
  * `markers` son `{ id, severity, lat, lon, label? }`. Los colores de los marcadores salen
  * de clases CSS (`.sev-alta`…) y no de `pathOptions`, así siguen viniendo de los tokens.
+ *
+ * `className` va como prop directa y no dentro de `pathOptions`: react-leaflet crea la capa
+ * solo con las props directas, y Leaflet aplica la clase únicamente al crearla. Dentro de
+ * `pathOptions` funcionaba solo en desarrollo, por el doble montaje de StrictMode.
  */
 export default function RoadMap({
   markers = [],
@@ -107,7 +111,7 @@ export default function RoadMap({
               key={`${m.id}:${isSel}`}
               center={[m.lat, m.lon]}
               radius={isSel ? SEV_RADIUS[m.severity] + 4 : SEV_RADIUS[m.severity]}
-              pathOptions={{ className: `sev-marker sev-${m.severity}${isSel ? ' sel' : ''}` }}
+              className={`sev-marker sev-${m.severity}${isSel ? ' sel' : ''}`}
               eventHandlers={{ click: () => onSelect?.(m.id) }}
             >
               {m.label && (
@@ -132,8 +136,8 @@ export function MiniMap({ lat, lon, severity = 'alta', style }) {
         <Tiles />
         <SizeWatcher />
         <FocusOn point={{ lat, lon }} />
-        <Circle center={[lat, lon]} radius={15} pathOptions={{ className: 'precision' }} />
-        <CircleMarker center={[lat, lon]} radius={9} pathOptions={{ className: `sev-marker sev-${severity}` }} />
+        <Circle center={[lat, lon]} radius={15} className="precision" />
+        <CircleMarker center={[lat, lon]} radius={9} className={`sev-marker sev-${severity}`} />
       </MapCanvas>
     </div>
   )
@@ -167,7 +171,7 @@ export function VehicleMap({ vehicles = [], selected, onSelect, className = '', 
         <FitRoute id={current?.id} path={current?.path} position={current?.position} />
 
         {current?.path?.length > 1 && (
-          <Polyline positions={current.path} pathOptions={{ className: 'route-line' }} />
+          <Polyline positions={current.path} className="route-line" />
         )}
 
         {vehicles.map((v) => {
@@ -178,7 +182,7 @@ export function VehicleMap({ vehicles = [], selected, onSelect, className = '', 
               key={`${v.id}:${isSel}`}
               center={v.position}
               radius={isSel ? 10 : 7}
-              pathOptions={{ className: `bus-marker${offline ? ' offline' : ''}${isSel ? ' sel' : ''}` }}
+              className={`bus-marker${offline ? ' offline' : ''}${isSel ? ' sel' : ''}`}
               eventHandlers={{ click: () => onSelect?.(v.id) }}
             >
               <Tooltip direction="top" offset={[0, -8]} permanent={isSel}>
@@ -226,7 +230,7 @@ export function HotspotMap({ hotspots = [], className = '', style, children }) {
             center={[h.lat, h.lon]}
             // sqrt: el área, no el radio, es lo que el ojo compara.
             radius={7 + 17 * Math.sqrt(h.count / max)}
-            pathOptions={{ className: `sev-marker hotspot sev-${h.level}` }}
+            className={`sev-marker hotspot sev-${h.level}`}
           >
             <Tooltip direction="top" offset={[0, -6]}>
               {h.label ? `${h.label} · ` : ''}
