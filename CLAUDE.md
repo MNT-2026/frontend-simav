@@ -126,16 +126,22 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
 - `incidents.js` / `inspections.js` — un módulo por recurso, devuelven objetos ya mapeados.
 - `statistics.js` — `GET /road-incidents/stats`. Calcula la ventana de los últimos N periodos
   (30 días, 12 semanas o 12 meses) en hora de Ibagué y traduce enums a español.
+- `reports.js` — `POST/GET /reports`. El reporte guarda filtros y una foto de las cifras;
+  la serie y el listado se piden a `/road-incidents` con la ventana `detected_from/_to` que
+  devuelve el servidor. `toUiReport` comprueba que los desgloses sumen el total y marca
+  `integrityProblems` en vez de pintar cifras contradictorias; la hoja avisa si las cifras
+  de hoy difieren de la foto.
 - `geocoding.js` — `usePlaceNames(points)`: nombre de calle y barrio de las zonas calientes.
 - `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
   cambiar las dependencias.
 
 **Conectadas a la API**: Dashboard (KPIs, mini gráficas semanales de total, baches, grietas y
 críticos, mapa y recientes), Mapa, Incidentes (filtros y paginación **en servidor**), Detalle
-de incidente (con cambio de estado real), el contador del sidebar, y Estadísticas (serie,
-severidad, tipos, zonas calientes y mapa).
+de incidente (con cambio de estado real), el contador del sidebar, Estadísticas (serie,
+severidad, tipos, zonas calientes y mapa) y Reportes (generar, historial y vista previa;
+sin exportación a PDF/Excel, que el backend no ofrece).
 
-**Todavía en `mock.js`**: Cámaras, Vehículos, Reportes, Datos, las notificaciones y, en el
+**Todavía en `mock.js`**: Cámaras, Vehículos, Datos, las notificaciones y, en el
 Dashboard, los kilómetros analizados y las cámaras activas. El backend no
 modela nada de eso. Donde un dato falso convive con datos reales, la interfaz lo dice
 («dato de demostración»).

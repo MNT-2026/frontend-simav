@@ -34,12 +34,17 @@ export class ApiError extends Error {
   }
 }
 
-/** Descarta los valores vacíos para no mandar `?status=undefined`. */
+/**
+ * Descarta los valores vacíos para no mandar `?status=undefined`. Un arreglo repite el
+ * parámetro (`?severity=HIGH&severity=LOW`), que es como la API recibe varios valores.
+ */
 function buildQuery(params = {}) {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    search.append(key, String(value))
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item === undefined || item === null || item === '') continue
+      search.append(key, String(item))
+    }
   }
   const query = search.toString()
   return query ? `?${query}` : ''
