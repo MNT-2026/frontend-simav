@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../components/Icon'
-import { MiniMap } from '../components/RoadMap'
+import { EvidenceFrame, MiniMap } from '../components/RoadMap'
 import { Button, Card, ErrorState, SeverityBadge, Skeleton, StatusBadge } from '../components/ui'
 import { useFakeExport, useToasts } from '../components/Toasts'
 import { getIncident, updateIncidentStatus } from '../api/incidents'
@@ -146,14 +146,26 @@ export default function IncidentDetail() {
             <div className="card-head">
               <span className="card-title">Evidencia visual</span>
               <span className="sub-text">
-                {incident.evidenceUrl ? 'Fotograma de la detección' : 'Sin evidencia adjunta'} · {incident.date}
+                {incident.evidenceUrl ? 'Fotografía de la detección' : 'Sin evidencia adjunta'} · {incident.date}
               </span>
               <span className="spacer" />
-              <Button size="sm" disabled={!incident.evidenceUrl}>
+              <Button
+                size="sm"
+                disabled={!incident.evidenceUrl}
+                onClick={() => window.open(incident.evidenceUrl, '_blank', 'noopener')}
+              >
                 Ver original
               </Button>
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#4E524B', minHeight: 0 }}>
+              {incident.evidenceUrl ? (
+                <EvidenceFrame
+                  src={incident.evidenceUrl}
+                  confidence={incident.confidence}
+                  label={incident.type.toLowerCase()}
+                  height="100%"
+                />
+              ) : (
               <svg
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
                 viewBox="0 0 800 420"
@@ -177,6 +189,7 @@ export default function IncidentDetail() {
                   {incident.type.toLowerCase()} · {incident.confidence}%
                 </text>
               </svg>
+              )}
               <div className="mono" style={{ position: 'absolute', right: 14, top: 14, background: 'rgba(6,10,18,.72)', color: '#fff', borderRadius: 7, padding: '5px 9px', fontSize: 11, fontWeight: 600 }}>
                 {incident.lat}, {incident.lon}
               </div>

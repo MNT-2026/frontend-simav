@@ -240,8 +240,21 @@ export function HotspotMap({ hotspots = [], className = '', style, children }) {
   )
 }
 
-/** Fotograma de evidencia simulado con la caja de detección de la IA. */
-export function EvidenceFrame({ confidence = 94, label = 'bache', height = 200 }) {
+/**
+ * Evidencia de la detección. Con `src` muestra la foto real que subió la app móvil;
+ * sin ella, un fotograma simulado con la caja de detección de la IA.
+ */
+export function EvidenceFrame({ src, confidence = 94, label = 'bache', height = 200 }) {
+  if (src) {
+    return (
+      <div className="evidence-photo" style={{ height }}>
+        <img src={src} alt={`Fotografía de ${label}`} loading="lazy" />
+        <span className="evidence-label mono">
+          {label} {confidence}%
+        </span>
+      </div>
+    )
+  }
   return (
     <svg viewBox="0 0 360 200" style={{ width: '100%', height, display: 'block' }} role="img" aria-label="Evidencia">
       <rect width="360" height="200" fill="#7A7E75" />

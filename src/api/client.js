@@ -3,7 +3,13 @@
  * Única puerta de salida a la red: el resto del frontend no llama a fetch.
  */
 
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1').replace(/\/$/, '')
+/**
+ * En producción la API se sirve bajo el mismo dominio del panel: Vercel reenvía `/api/*`
+ * al backend (ver vercel.json). Así las cookies de sesión son del mismo sitio y el panel
+ * puede leer la cookie CSRF, algo imposible si la API viviera en otro dominio.
+ */
+const DEFAULT_API_URL = import.meta.env.PROD ? '/api/v1' : 'http://localhost:8000/api/v1'
+const BASE_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '')
 
 /** Error de la API con el código HTTP, para que las pantallas distingan un 404 de una caída. */
 export class ApiError extends Error {

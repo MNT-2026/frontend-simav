@@ -86,8 +86,8 @@ Token discipline that the design depends on:
   still come from tokens; Leaflet only applies `className` on creation, so selection re-keys the
   marker. Overlays passed as children need `z-index: 1000` (see `.mapwrap .map-overlay`).
   `MiniMap` shows a single point; `VehicleMap` shows the fleet (all buses + the selected bus route,
-  from `data/vehicleRoutes.js`, generated from OSM street geometry). `EvidenceFrame` is still a
-  simulated SVG frame.
+  from `data/vehicleRoutes.js`, generated from OSM street geometry). `EvidenceFrame` shows the real photo (`src`,
+  the `evidence_url` uploaded by the mobile app) or falls back to a simulated SVG frame.
 - Toasts: `const { push } = useToasts()` for notices, `useFakeExport()` for export flows.
 
 ## Mock-data coherence
@@ -108,6 +108,8 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
   `X-CSRF-Token` en los métodos no seguros y, ante un 401, intenta una vez `POST /auth/refresh`
   y reintenta; si sigue en 401 avisa al `AuthProvider`. Front y API tienen que usar el mismo
   host (`localhost` con `localhost`): con `127.0.0.1` el front no lee la cookie CSRF.
+  En producción (`vite build`) la base por defecto es `/api/v1`: Vercel reenvía `/api/*` al
+  backend en Render (`vercel.json`), así panel y API comparten dominio y la cookie CSRF es legible.
 - `auth.js` + `src/auth/AuthProvider.jsx` — login/logout/`/auth/me` reales. `useAuth()` da
   `{ user, status, login, logout }` y `<RequireAuth/>` protege todas las rutas del shell.
 - `mappers.js` — traduce enums del backend (inglés) a la interfaz (español) y de vuelta:

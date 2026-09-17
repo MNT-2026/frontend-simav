@@ -186,7 +186,11 @@ export default function MapPage() {
 
           <div style={{ padding: '14px 16px' }}>
             <div style={{ borderRadius: 11, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
-              <EvidenceFrame confidence={incident.confidence} label={incident.type.toLowerCase()} />
+              <EvidenceFrame
+                src={incident.evidenceUrl}
+                confidence={incident.confidence}
+                label={incident.type.toLowerCase()}
+              />
             </div>
 
             <div
