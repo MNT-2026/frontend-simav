@@ -48,7 +48,7 @@ export default function Login() {
     <div className="login">
       <div className="login-pane">
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <BrandLogo height={46} />
+          <BrandLogo height={72} />
         </div>
 
         <form onSubmit={submit} style={{ margin: 'auto 0', padding: '36px 0' }}>
