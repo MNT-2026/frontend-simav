@@ -80,37 +80,17 @@ button {
   justify-content: center;
 }
 
-.mark {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border-radius: var(--r-md);
-  background: var(--acc);
-  color: var(--acc-ink);
+/* Logo de SIMAV (BrandLogo elige la variante clara u oscura segun el tema). */
+.brand-link {
   display: flex;
   align-items: center;
-  justify-content: center;
+  min-width: 0;
 }
-
-.wordmark {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  white-space: nowrap;
-}
-.wordmark span {
-  font-weight: 500;
-  color: var(--mut);
-}
-.wordmark em {
+.brand-logo {
   display: block;
-  font-style: normal;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: var(--sub);
-  font-weight: 700;
-  margin-top: 3px;
+  width: auto;
+  max-width: 100%;
+  user-select: none;
 }
 
 .header-mid {

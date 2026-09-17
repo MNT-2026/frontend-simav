@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import BrandLogo from '../components/BrandLogo'
 import Icon from '../components/Icon'
 import { Button } from '../components/ui'
 import { useAuth } from '../auth/AuthProvider'
@@ -46,14 +47,8 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-pane">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <div className="mark" style={{ width: 34, height: 34, flex: '0 0 34px', borderRadius: 10 }}>
-            <Icon name="road" size={19} strokeWidth={2.1} />
-          </div>
-          <div className="wordmark" style={{ fontSize: 17 }}>
-            ROAD<span>VISION</span>
-            <em>ROAD INTELLIGENCE</em>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <BrandLogo height={46} />
         </div>
 
         <form onSubmit={submit} style={{ margin: 'auto 0', padding: '36px 0' }}>

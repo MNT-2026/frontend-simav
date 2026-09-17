@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import BrandLogo from './BrandLogo'
 import ConnectionStatus from './ConnectionStatus'
 import Icon from './Icon'
 import { THEMES, useTheme } from '../theme/ThemeProvider'
@@ -25,15 +26,9 @@ export default function Header({ title, crumbs = [], collapsed, onToggleSidebar 
   return (
     <header className="header">
       <div className={`brand ${collapsed ? 'collapsed' : ''}`}>
-        <Link to="/dashboard" className="mark" aria-label="ROADVISION">
-          <Icon name="road" size={17} strokeWidth={2.1} />
+        <Link to="/dashboard" className="brand-link" aria-label="SIMAV · Inicio">
+          {collapsed ? <BrandLogo variant="mark" height={32} /> : <BrandLogo height={34} />}
         </Link>
-        {!collapsed && (
-          <div className="wordmark">
-            ROAD<span>VISION</span>
-            <em>ROAD INTELLIGENCE</em>
-          </div>
-        )}
       </div>
 
       <div className="header-mid">

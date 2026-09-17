@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Icon from '../components/Icon'
+import BrandLogo from '../components/BrandLogo'
 import { Button, Card, Switch } from '../components/ui'
 import { useFakeExport } from '../components/Toasts'
 import { weeklyTrend } from '../data/mock'
@@ -193,12 +193,10 @@ function ReportSheet({ zones, severities }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, borderBottom: '2px solid #0d1420', paddingBottom: 14 }}>
-        <div style={{ width: 26, height: 26, borderRadius: 8, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-          <Icon name="road" size={15} strokeWidth={2.1} />
-        </div>
+        <BrandLogo variant="mark" height={30} surface="light" />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em' }}>
-            ROADVISION <span style={{ fontWeight: 500, color: '#5a6678' }}>· Informe mensual</span>
+            SIMAV <span style={{ fontWeight: 500, color: '#5a6678' }}>· Informe mensual</span>
           </div>
           <div style={{ fontSize: 9.5, color: '#8c97a8', fontWeight: 700, letterSpacing: '0.06em', marginTop: 2 }}>
             SECRETARÍA DE MOVILIDAD · ZONA {zones.map((z) => z.toUpperCase()).join(' Y ') || '—'}

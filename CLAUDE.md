@@ -73,6 +73,9 @@ Token discipline that the design depends on:
 
 ## Component conventions
 
+- `components/BrandLogo.jsx` is the SIMAV logo (PNGs in `src/assets/brand/`). The original is white + blue
+  for Dark/Night; Light uses a variant with the white recolored to navy (#0B2A5B). It picks the
+  variant from `useTheme()`; pass `surface="light"` on surfaces that ignore the theme (report sheet).
 - `components/Icon.jsx` is the single icon set (inline SVG, `<Icon name="…" size strokeWidth/>`).
   **No emojis in the UI** — add a new path to `Icon.jsx` instead.
 - `components/ui.jsx` — Button, Card/CardHead, SeverityBadge, StatusBadge, Confidence, Checkbox,
