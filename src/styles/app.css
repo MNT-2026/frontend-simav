@@ -806,6 +806,9 @@ button {
 
 .mapwrap {
   position: relative;
+  /* Leaflet usa z-index 400-1000 en sus capas. Sin aislarlas compiten con el resto de la
+     pagina y tapan lo que va encima del mapa, como el panel lateral del incidente (z 3). */
+  isolation: isolate;
   overflow: hidden;
   background: var(--map-bg);
   border-radius: var(--r-lg);
