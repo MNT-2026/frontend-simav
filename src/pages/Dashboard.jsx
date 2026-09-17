@@ -19,10 +19,11 @@ export default function Dashboard() {
   const exportFile = useFakeExport()
 
   const fetcher = useCallback(async ({ signal }) => {
-    const [total, potholes, cracks, high, medium, low, recent, onMap, weekly] = await Promise.all([
+    const [total, potholes, cracks, damage, high, medium, low, recent, onMap, weekly] = await Promise.all([
       countIncidents({ signal }),
       countIncidents({ type: 'Bache', signal }),
       countIncidents({ type: 'Grieta', signal }),
+      countIncidents({ type: 'Daño en vía', signal }),
       countIncidents({ severity: 'alta', signal }),
       countIncidents({ severity: 'media', signal }),
       countIncidents({ severity: 'baja', signal }),
@@ -37,6 +38,7 @@ export default function Dashboard() {
         total: series((p) => p.total),
         potholes: series((p) => p.byType.Bache ?? 0),
         cracks: series((p) => p.byType.Grieta ?? 0),
+        damage: series((p) => p.byType['Daño en vía'] ?? 0),
         high: series((p) => p.bySeverity.alta ?? 0),
         weeks: weekly.timeline.length,
         from: weekly.timeline[0]?.label,
@@ -44,6 +46,7 @@ export default function Dashboard() {
       total,
       potholes,
       cracks,
+      damage,
       severities: { alta: high, media: medium, baja: low },
       recent: recent.items,
       markers: onMap.items.map((i) => ({
@@ -248,6 +251,9 @@ function KpiRow({ data }) {
       </Kpi>
       <Kpi icon="crack" label="Grietas" value={String(data.cracks)} note={share(data.cracks)}>
         <SparkBars points={trends.cracks} color="var(--s2)" title={title('Grietas', trends.cracks)} />
+      </Kpi>
+      <Kpi icon="warn" label="Daños en vía" value={String(data.damage)} note={share(data.damage)}>
+        <SparkBars points={trends.damage} color="var(--sub)" title={title('Daños en vía', trends.damage)} />
       </Kpi>
       <Kpi
         critical

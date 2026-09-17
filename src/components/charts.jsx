@@ -291,7 +291,10 @@ export function GroupedBars({ data, series, height = 240, yTitle = 'Incidentes',
   const max = ticks[ticks.length - 1]
   const plotW = W - padL - padR
   const groupW = plotW / Math.max(1, data.length)
-  const bw = Math.min(22, groupW / 2.6)
+  // Ancho de barra segun cuantas series haya en cada grupo, con 2 px de aire entre ellas.
+  const gap = 2
+  const bw = Math.min(22, groupW / (series.length + 0.6))
+  const groupBarsW = series.length * bw + (series.length - 1) * gap
   const y = (v) => padT + (1 - v / max) * (H - padT - padB)
   const labeled = labeledIndexes(data.length, 8)
   const active = hover ?? pinned
@@ -310,8 +313,8 @@ export function GroupedBars({ data, series, height = 240, yTitle = 'Incidentes',
         return (
           <g key={i} opacity={active == null || active === i ? 1 : 0.45}>
             {series.map((s, j) => {
-              // Barras pegadas al centro del grupo con 2 px de aire entre ellas.
-              const bx = j === 0 ? cx - bw - 1 : cx + 1
+              // Barras centradas en el grupo, una al lado de la otra.
+              const bx = cx - groupBarsW / 2 + j * (bw + gap)
               const value = d[s.key]
               return (
                 <g key={s.key}>

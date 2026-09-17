@@ -33,6 +33,8 @@ const BAR_SCOPE = {
 const BAR_SERIES = [
   { key: 'potholes', label: 'Baches', color: 'var(--s1)' },
   { key: 'cracks', label: 'Grietas', color: 'var(--s2)' },
+  // Gris neutro y no un tercer color de serie: s1/s2 son los únicos validados para daltonismo.
+  { key: 'damage', label: 'Daños en vía', color: 'var(--sub)' },
 ]
 // Zonas del ranking (el mapa muestra todas las que devuelve la API).
 const TOP_ZONES = 5
@@ -127,11 +129,12 @@ export default function Statistics() {
     detail: p.detail,
     potholes: p.byType.Bache ?? 0,
     cracks: p.byType.Grieta ?? 0,
+    damage: p.byType['Daño en vía'] ?? 0,
   }))
   const barTotals = {
     potholes: bars.reduce((sum, b) => sum + b.potholes, 0),
     cracks: bars.reduce((sum, b) => sum + b.cracks, 0),
-    damage: barPeriods.reduce((sum, p) => sum + (p.byType['Daño en vía'] ?? 0), 0),
+    damage: bars.reduce((sum, b) => sum + b.damage, 0),
   }
 
   const severities = SEVERITIES.map((s) => ({
@@ -213,7 +216,7 @@ export default function Statistics() {
       <div style={{ flex: 1, display: 'flex', gap: 14, minHeight: 280 }}>
         <Card style={{ flex: 1.15, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <CardHead
-            title="Baches y grietas"
+            title="Incidentes por tipo"
             question={`Incidentes detectados de cada tipo por ${PERIOD_NOUN[grain]} · ${BAR_SCOPE[grain](bars.length)}`}
           >
             <span className="spacer" />
@@ -221,6 +224,7 @@ export default function Statistics() {
               items={[
                 { label: `Baches · ${barTotals.potholes}`, color: 'var(--s1)' },
                 { label: `Grietas · ${barTotals.cracks}`, color: 'var(--s2)' },
+                { label: `Daños en vía · ${barTotals.damage}`, color: 'var(--sub)' },
               ]}
             />
           </CardHead>
@@ -236,8 +240,6 @@ export default function Statistics() {
           <div className="sub-text" style={{ fontSize: 11, padding: '0 15px 11px' }}>
             Cada barra es el número de reportes de ese tipo en el {PERIOD_NOUN[grain]}; pasa el cursor o haz clic para ver el
             detalle.
-            {barTotals.damage > 0 &&
-              ` Además hubo ${barTotals.damage} ${barTotals.damage === 1 ? 'daño en vía' : 'daños en vía'}, no graficados.`}
           </div>
         </Card>
 
