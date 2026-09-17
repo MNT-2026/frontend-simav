@@ -10,6 +10,7 @@ import {
   TEMPLATE_LABEL,
   formatDate,
   formatInstant,
+  downloadReportPdf,
   generateReport,
   getReportDetail,
   lastWeek,
@@ -46,6 +47,7 @@ export default function Reports() {
   const { push } = useToasts()
   const [form, setForm] = useState(() => ({ template: 'mensual', title: '', ...presetFor('mensual') }))
   const [generating, setGenerating] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [selected, setSelected] = useState(null)
   const [offset, setOffset] = useState(0)
 
@@ -81,6 +83,18 @@ export default function Reports() {
       push({ tone: 'high', title: 'No se pudo generar el reporte', desc: err.message })
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const download = async () => {
+    if (!current || downloading) return
+    setDownloading(true)
+    try {
+      await downloadReportPdf(current)
+    } catch (err) {
+      push({ tone: 'high', title: 'No se pudo descargar el PDF', desc: err.message })
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -180,6 +194,15 @@ export default function Reports() {
             </span>
           )}
           <span className="spacer" />
+          <Button
+            icon="download"
+            loading={downloading}
+            // Un reporte con cifras inconsistentes no se muestra, así que tampoco se exporta.
+            disabled={!current || downloading || current.integrityProblems.length > 0}
+            onClick={download}
+          >
+            Descargar PDF
+          </Button>
         </div>
 
         <div

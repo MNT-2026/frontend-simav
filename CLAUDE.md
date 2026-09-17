@@ -131,6 +131,8 @@ places that restate it — KPIs, charts, and page copy — or the demo stops add
   devuelve el servidor. `toUiReport` comprueba que los desgloses sumen el total y marca
   `integrityProblems` en vez de pintar cifras contradictorias; la hoja avisa si las cifras
   de hoy difieren de la foto.
+  `downloadReportPdf` baja `GET /reports/{id}/pdf` (lo arma el backend con ReportLab)
+  con `api.getBlob` y lo nombra con el código del reporte.
 - `geocoding.js` — `usePlaceNames(points)`: nombre de calle y barrio de las zonas calientes.
 - `useApi.js` — `{ data, loading, error, reload }`, cancela la petición anterior al
   cambiar las dependencias.

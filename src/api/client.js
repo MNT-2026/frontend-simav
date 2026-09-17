@@ -103,7 +103,7 @@ function refreshSession() {
 // Las rutas de sesión no disparan la renovación automática: evita bucles y reintentos absurdos.
 const SESSION_PATHS = new Set(['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'])
 
-async function request(path, options = {}) {
+async function request(path, { as = 'json', ...options } = {}) {
   const method = options.method ?? 'GET'
   let response = await send(path, options)
 
@@ -120,7 +120,8 @@ async function request(path, options = {}) {
     })
   }
 
-  return response.status === 204 ? null : response.json()
+  if (response.status === 204) return null
+  return as === 'blob' ? response.blob() : response.json()
 }
 
 async function readErrorMessage(response) {
@@ -139,6 +140,8 @@ export const api = {
   get: (path, options) => request(path, { ...options, method: 'GET' }),
   post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
   patch: (path, body, options) => request(path, { ...options, method: 'PATCH', body }),
+  /** Descargas binarias (PDF): mismo manejo de sesión y errores que el resto. */
+  getBlob: (path, options) => request(path, { ...options, method: 'GET', as: 'blob' }),
 }
 
 export { BASE_URL }

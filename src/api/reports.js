@@ -79,6 +79,27 @@ export async function generateReport(form) {
   return toUiReport(created)
 }
 
+/**
+ * Descarga el PDF que arma el backend (`GET /reports/{id}/pdf`). El nombre sale del código y
+ * no de `Content-Disposition`: en desarrollo la API es de otro origen y esa cabecera no se lee.
+ */
+export async function downloadReportPdf(report, { signal } = {}) {
+  const blob = await api.getBlob(`/reports/${encodeURIComponent(report.id)}/pdf`, { signal })
+  if (blob.type && !blob.type.includes('pdf')) throw new Error('El servidor no devolvió un PDF')
+  const url = URL.createObjectURL(blob)
+  try {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${report.code}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } finally {
+    // Tras el clic el navegador ya tiene el archivo; liberar enseguida puede cortar la descarga.
+    setTimeout(() => URL.revokeObjectURL(url), 30_000)
+  }
+}
+
 export async function listReports({ limit = 10, offset = 0, signal } = {}) {
   const page = await api.get('/reports', { signal, params: { limit, offset } })
   return {
