@@ -13,7 +13,7 @@ function buildTimeline(incident) {
   const order = ['nuevo', 'revisado', 'atendido']
   const reached = incident.status === 'descartado' ? 1 : order.indexOf(incident.status)
   const steps = [
-    { key: 'detectado', label: 'Detectado', when: formatDateTime(incident.detectedAt), who: 'IA ROADVISION' },
+    { key: 'detectado', label: 'Detectado', when: formatDateTime(incident.detectedAt), who: 'IA SIMAV' },
     { key: 'revisado', label: 'Revisado', when: 'Pendiente', who: '' },
     { key: 'atendido', label: 'Atendido', when: 'Pendiente', who: '' },
   ]

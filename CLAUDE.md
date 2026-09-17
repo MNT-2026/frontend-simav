@@ -20,7 +20,7 @@ There is no test runner, linter, or formatter configured — don't invent comman
 
 ## What this is
 
-ROADVISION: a frontend-only prototype of a road-infrastructure control center (pothole/crack
+SIMAV (formerly ROADVISION): a frontend-only prototype of a road-infrastructure control center (pothole/crack
 detection from cameras and vehicles). **All data is mock data** in `src/data/mock.js`; there is no
 backend, no auth, and no network calls. Login (`src/pages/Login.jsx`) validates password length and
 `setTimeout`s into `/dashboard`. Exports are simulated by `useFakeExport()` in
@@ -68,7 +68,7 @@ Token discipline that the design depends on:
   which must show all three themes at once.
 
 `ThemeProvider` (`src/theme/ThemeProvider.jsx`) writes `data-theme` and `data-motion` onto
-`<html>` and persists both to `localStorage` (`roadvision:theme`, `roadvision:motion`). Respect
+`<html>` and persists both to `localStorage` (`roadvision:theme`, `roadvision:motion`; the keys keep the old name so saved preferences survive the rename to SIMAV). Respect
 `data-motion="reduced"` when adding animation.
 
 ## Component conventions

@@ -1,5 +1,5 @@
 /**
- * Datos de muestra. Sustituir por la API real de ROADVISION.
+ * Datos de muestra. Sustituir por la API real de SIMAV.
  * Nombres de rutas, direcciones y personas son ficticios.
  */
 
@@ -86,7 +86,7 @@ export const incidents = rows.map(
 
 export const incidentTimeline = {
   'IGB-00231': [
-    { key: 'detectado', label: 'Detectado', when: '02/09 · 08:14', who: 'IA ROADVISION', done: true },
+    { key: 'detectado', label: 'Detectado', when: '02/09 · 08:14', who: 'IA SIMAV', done: true },
     { key: 'revisado', label: 'Revisado', when: '02/09 · 09:02', who: 'Sofía Marín', done: true },
     { key: 'seguimiento', label: 'En seguimiento', when: '02/09 · 11:40', who: 'Cuadrilla Norte 2', current: true },
     { key: 'atendido', label: 'Atendido', when: 'Pendiente · SLA 48 h', who: '' },

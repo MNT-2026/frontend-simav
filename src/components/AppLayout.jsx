@@ -34,7 +34,7 @@ export default function AppLayout() {
   return (
     <div className="shell">
       <Header
-        title={meta?.title ?? 'ROADVISION'}
+        title={meta?.title ?? 'SIMAV'}
         crumbs={meta?.crumbs ?? []}
         collapsed={collapsed}
         onToggleSidebar={() => setCollapsed((v) => !v)}

@@ -8,6 +8,7 @@ export const THEMES = [
   { id: 'night', label: 'Night', icon: 'night', hint: 'Turnos nocturnos · máximo contraste' },
 ]
 
+// Las claves conservan el nombre anterior (ROADVISION) para no perder el tema ya guardado.
 const KEY = 'roadvision:theme'
 const MOTION_KEY = 'roadvision:motion'
 

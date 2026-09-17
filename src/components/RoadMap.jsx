@@ -75,7 +75,7 @@ function FocusOn({ point, zoom = 17 }) {
 }
 
 /**
- * Mapa interactivo de ROADVISION sobre OpenStreetMap, centrado en Ibagué.
+ * Mapa interactivo de SIMAV sobre OpenStreetMap, centrado en Ibagué.
  *
  * `markers` son `{ id, severity, lat, lon, label? }`. Los colores de los marcadores salen
  * de clases CSS (`.sev-alta`…) y no de `pathOptions`, así siguen viniendo de los tokens.

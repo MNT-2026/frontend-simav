@@ -51,7 +51,7 @@ export default function Settings() {
               <div>
                 <div className="h-lg">Apariencia</div>
                 <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>
-                  Ajusta cómo se ve ROADVISION en esta cuenta. Se aplica en todos tus dispositivos.
+                  Ajusta cómo se ve SIMAV en esta cuenta. Se aplica en todos tus dispositivos.
                 </div>
               </div>
               <span className="spacer" />

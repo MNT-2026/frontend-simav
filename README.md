@@ -1,6 +1,6 @@
-# ROADVISION · frontend
+# SIMAV · frontend
 
-Implementación en React (Vite) del prototipo de ROADVISION, con la paleta de marca
+Implementación en React (Vite) del prototipo de SIMAV, con la paleta de marca
 cambiada de verde señal a **azul tecnológico**.
 
 ## Arrancar

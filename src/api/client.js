@@ -1,5 +1,5 @@
 /**
- * Cliente HTTP de la API de ROADVISION.
+ * Cliente HTTP de la API de SIMAV.
  * Única puerta de salida a la red: el resto del frontend no llama a fetch.
  */
 
